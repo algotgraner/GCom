@@ -1,4 +1,4 @@
 package se.gcom;
 
-public class main {
+public class Main{
 }
