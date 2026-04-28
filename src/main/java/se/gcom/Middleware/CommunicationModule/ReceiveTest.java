@@ -6,13 +6,15 @@ import io.grpc.ServerBuilder;
 public class ReceiveTest {
     public static void main(String[] args) throws Exception {
 
+        int port = (args.length > 0) ? Integer.parseInt(args[0]) : 5001;
+
         Server server = ServerBuilder
-                .forPort(50051)
+                .forPort(port)
                 .addService(new CommunicationGrpcHandler())
                 .build();
 
         server.start();
-        System.out.println("Listening on port 50051");
+        System.out.println("Listening on port 5051");
         server.awaitTermination();
 
     }

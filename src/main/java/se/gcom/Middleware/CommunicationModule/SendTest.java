@@ -1,17 +1,10 @@
 package se.gcom.Middleware.CommunicationModule;
 
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import java.util.List;
 
 public class SendTest {
     public static void main(String[] args) throws Exception {
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("localhost", 50051)
-                .usePlaintext()
-                .build();
-
-        CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
-                CommunicationServiceGrpc.newBlockingStub(channel);
+        CommunicationGrpcSender sender = new CommunicationGrpcSender();
 
         ChatMessage msg = ChatMessage.newBuilder()
                 .setMessageId("1")
@@ -20,9 +13,6 @@ public class SendTest {
                 .setPayload("Hello from Jonis")
                 .build();
 
-        Ack ack = stub.sendMessage(msg);
-
-        System.out.println("Ack: " + ack.getSuccess());
-        channel.shutdown();
+        sender.multicast(msg, List.of(5001, 5002));
     }
 }
