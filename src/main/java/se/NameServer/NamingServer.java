@@ -11,7 +11,7 @@ public class NamingServer {
         if(!groupAddressMap.containsKey(groupName)){
             throw new GroupDoesNotExistException(groupName);
         }
-        return groupAddressMap.get(groupName);
+        return new ArrayList<>(groupAddressMap.get(groupName));
     }
     public void addNewGroup(String groupName, ArrayList<String> addresses){
         if (groupAddressMap.containsKey(groupName)){
@@ -30,6 +30,16 @@ public class NamingServer {
             throw new GroupDoesNotExistException(groupName);
         }
         groupAddressMap.get(groupName).remove(address);
+    }
+
+    public ArrayList<String> getGroups(String address){
+        ArrayList<String> groups = new ArrayList<>();
+        for (String group : groupAddressMap.keySet()){
+            if(groupAddressMap.get(group).contains(address)){
+                groups.add(group);
+            }
+        }
+        return groups;
     }
 
     public static class GroupAlreadyExistsException extends RuntimeException {

@@ -8,10 +8,15 @@ service NamingService {
   rpc AddNewGroup (AddGroupRequest) returns (Empty);
   rpc AddToGroup (AddToGroupRequest) returns (Empty);
   rpc RemoveFromGroup (AddToGroupRequest) returns (Empty);
+  rpc GetGroups (AddressRequest) returns (GroupList);
 }
 
 message GroupRequest {
   string groupName = 1;
+}
+
+message AddressRequest {
+  string addressName = 1;
 }
 
 message AddGroupRequest {
@@ -26,6 +31,9 @@ message AddToGroupRequest {
 
 message AddressList {
   repeated string addresses = 1;
+}
+message GroupList {
+  repeated string groups = 1;
 }
 
 message Empty {}

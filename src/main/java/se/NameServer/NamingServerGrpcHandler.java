@@ -28,6 +28,13 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
         responseObserver.onNext(addressList);
         responseObserver.onCompleted();
     }
+    @Override
+    public void getGroups(AddressRequest request, StreamObserver<GroupList> responseObserver){
+        ArrayList<String> groups = namingServer.getGroups(request.getAddressName());
+        GroupList groupList = GroupList.newBuilder().addAllGroups(groups).build();
+        responseObserver.onNext(groupList);
+        responseObserver.onCompleted();
+    }
 
     @Override
     public void addNewGroup(AddGroupRequest request, StreamObserver<Empty> responseObserver) {
