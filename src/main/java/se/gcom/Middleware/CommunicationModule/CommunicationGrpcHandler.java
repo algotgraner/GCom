@@ -1,4 +1,4 @@
-package se.gcom.Middleware.CommunicationModule;
+package se.gcom.middleware.communicationModule;
 
 import io.grpc.stub.StreamObserver;
 
