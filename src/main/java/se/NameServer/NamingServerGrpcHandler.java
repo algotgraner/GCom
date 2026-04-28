@@ -1,4 +1,5 @@
 package se.NameServer;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import se.NameServer.grpc.*;
 
@@ -9,7 +10,17 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
 
     @Override
     public void getAddresses(GroupRequest request, StreamObserver<AddressList> responseObserver) {
-        ArrayList<String> addresses = namingServer.getAddresses(request.getGroupName());
+        ArrayList<String> addresses;
+        try {
+            addresses = namingServer.getAddresses(request.getGroupName());;
+        } catch (NamingServer.GroupDoesNotExistException e){
+            addresses = null;
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription(e.getMessage())
+                            .asRuntimeException()
+            );
+        }
         if(addresses == null){
             addresses = new ArrayList<>();
         }
@@ -22,7 +33,15 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
     public void addNewGroup(AddGroupRequest request, StreamObserver<Empty> responseObserver) {
         String groupName = request.getGroupName();
         ArrayList<String> addresses = new ArrayList<>(request.getAddressesList());
-        namingServer.addNewGroup(groupName, addresses);
+        try {
+            namingServer.addNewGroup(groupName, addresses);
+        }catch (NamingServer.GroupAlreadyExistsException e){
+            responseObserver.onError(
+                    Status.ALREADY_EXISTS
+                            .withDescription(e.getMessage())
+                            .asRuntimeException()
+            );
+        }
         responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
     }
@@ -31,7 +50,32 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
     public void addToGroup(AddToGroupRequest request, StreamObserver<Empty> responseObserver){
         String groupName = request.getGroupName();
         String address = request.getAddress();
-        namingServer.addToGroup(groupName, address);
+        try {
+            namingServer.addToGroup(groupName, address);
+        } catch (NamingServer.GroupDoesNotExistException e){
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription(e.getMessage())
+                            .asRuntimeException()
+            );
+        }
+        responseObserver.onNext(Empty.newBuilder().build());
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void removeFromGroup(AddToGroupRequest request, StreamObserver<Empty> responseObserver){
+        String groupName = request.getGroupName();
+        String address = request.getAddress();
+        try {
+            namingServer.removeFromGroup(groupName, address);
+        } catch (NamingServer.GroupDoesNotExistException e){
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription(e.getMessage())
+                            .asRuntimeException()
+            );
+        }
         responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
     }

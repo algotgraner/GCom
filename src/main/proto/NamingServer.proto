@@ -7,6 +7,7 @@ service NamingService {
   rpc GetAddresses (GroupRequest) returns (AddressList);
   rpc AddNewGroup (AddGroupRequest) returns (Empty);
   rpc AddToGroup (AddToGroupRequest) returns (Empty);
+  rpc RemoveFromGroup (AddToGroupRequest) returns (Empty);
 }
 
 message GroupRequest {
