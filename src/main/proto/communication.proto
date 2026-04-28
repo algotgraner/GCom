@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option java_package = "se.gcom.Middleware.CommunicationModule";
+option java_multiple_files = true;
+
+service CommunicationService{
+  rpc SendMessage(ChatMessage) returns (Ack);
+}
+
+message ChatMessage {
+  string messageId = 1;
+  string senderId = 2;
+  string receiverId = 3;
+  string payload = 4;
+}
+
+message Ack {
+  bool success = 1;
+}
+
+message Empty{
+}
