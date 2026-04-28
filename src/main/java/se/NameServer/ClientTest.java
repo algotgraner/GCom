@@ -1,7 +1,6 @@
 package se.NameServer;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import se.NameServer.grpc.*;
 
@@ -20,7 +19,7 @@ public class ClientTest {
         NamingServiceGrpc.NamingServiceBlockingStub stub =
                 NamingServiceGrpc.newBlockingStub(channel);
 
-        // 1. Add a group
+        // Add a new group
         try {
             stub.addNewGroup(
                     AddGroupRequest.newBuilder()
@@ -33,7 +32,7 @@ public class ClientTest {
             System.out.println(e.getMessage());
         }
 
-        // 2. Add one more address
+        // Add one more address
         try {
             stub.addToGroup(
                     AddToGroupRequest.newBuilder()
@@ -45,12 +44,17 @@ public class ClientTest {
             System.out.println(e.getMessage());
         }
 
+        // Remove from group
         try {
-            stub.removeFromGroup(AddToGroupRequest.newBuilder().setGroupName("group1").setAddress("127.0.0.1:5001").build());
+            stub.removeFromGroup(
+                    AddToGroupRequest.newBuilder()
+                            .setGroupName("group1")
+                            .setAddress("127.0.0.1:5001")
+                            .build());
         } catch (StatusRuntimeException e){
             System.out.println(e.getMessage());
         }
-        // 3. Get addresses
+        // Get addresses
         List<String> addresses = new ArrayList<>();
         try {
             AddressList response = stub.getAddresses(
@@ -63,13 +67,16 @@ public class ClientTest {
             System.out.println(e.getMessage());
         }
 
-
         System.out.println("Addresses:");
         for (String a : addresses) {
             System.out.println(a);
         }
 
-        GroupList response = stub.getGroups(AddressRequest.newBuilder().setAddressName("127.0.0.1:5002").build());
+        // Get groups from address
+        GroupList response = stub.getGroups(AddressRequest.newBuilder()
+                .setAddressName("127.0.0.1:5002")
+                .build());
+
         List<String> groups = response.getGroupsList();
         for (String a : groups){
             System.out.println(a);

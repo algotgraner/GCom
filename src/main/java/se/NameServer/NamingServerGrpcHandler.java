@@ -28,6 +28,7 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
         responseObserver.onNext(addressList);
         responseObserver.onCompleted();
     }
+
     @Override
     public void getGroups(AddressRequest request, StreamObserver<GroupList> responseObserver){
         ArrayList<String> groups = namingServer.getGroups(request.getAddressName());
