@@ -87,4 +87,10 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
         responseObserver.onNext(Empty.newBuilder().build());
         responseObserver.onCompleted();
     }
+
+    @Override
+    public void isUp(Empty request, StreamObserver<Empty> responseObserver){
+        responseObserver.onNext(Empty.newBuilder().build());
+        responseObserver.onCompleted();
+    }
 }
