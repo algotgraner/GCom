@@ -17,7 +17,7 @@ public class Manager {
     public void send(ChatMessage msg){
         // 1. call group manager to get what IPs to send to and metadata about the group setup
 
-        // 2. call ordering module to fix the ordering
+        // 2. call ordering module to append vector clock
 
         // 3. call communication module to send the actual message
     }
