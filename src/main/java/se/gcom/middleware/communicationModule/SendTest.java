@@ -1,6 +1,7 @@
 package se.gcom.middleware.communicationModule;
 
 import java.util.List;
+import io.grpc.*;
 
 public class SendTest {
     public static void main(String[] args) throws Exception {
