@@ -6,8 +6,6 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
     @Override
     public void sendMessage(ChatMessage request, StreamObserver<Ack> responseObserver) {
 
-        // 1. 
-
         System.out.println("Received: " + request.getPayload());
         System.out.println(request.getSenderId());
         System.out.println(request.getReceiverId());
