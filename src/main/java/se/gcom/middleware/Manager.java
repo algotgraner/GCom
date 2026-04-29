@@ -1,5 +1,6 @@
 package se.gcom.middleware;
 
+import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.middleware.communicationModule.ChatMessage;
@@ -25,7 +26,11 @@ public class Manager {
     public Manager(ChatController chatController, DebugController debugController) {
         this.chatController = chatController;
         this.debugController = debugController;
-        this.groupManagement = new GroupManagement(5001);
+        try {
+            this.groupManagement = new GroupManagement(5001);
+        } catch (GroupManagement.NamingServerIsDown e){
+
+        }
         this.communicationGrpcSender = new CommunicationGrpcSender();
         this.communicationGrpcHandler = new CommunicationGrpcHandler(this);
 

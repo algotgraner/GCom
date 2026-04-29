@@ -17,15 +17,15 @@ public class GroupManagement {
     public GroupManagement(int port){
         namingServerCommunication = new NamingServerCommunication();
         namingServerIsUp = namingServerCommunication.isUp();
+        groupAddressMap = new HashMap<>();
+        String ip = getIpAddress();
+        address = ip + ":" + port;
+        groupAddressMap.put("Group1", new ArrayList<>(List.of("130.239.232.131:5001")));
         if (namingServerCommunication.isUp()){
             namingServerIsUp = true;
         } else{
             throw new NamingServerIsDown();
         }
-        groupAddressMap = new HashMap<>();
-        String ip = getIpAddress();
-        address = ip + ":" + port;
-        groupAddressMap.put("Group1", new ArrayList<>(List.of("127.0.0.1:5001")));
     }
 
 
