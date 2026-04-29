@@ -49,6 +49,21 @@ public class Manager {
         chatController.receiveMessage(msg.getSenderId(), msg.getPayload());
     }
 
+    public void addUserToGroup(String groupName, String ipAddress, String name, int port) {
+        System.out.println("groupName: " + groupName);
+        System.out.println("ipAddress: " + ipAddress);
+        System.out.println("name: " + name);
+        System.out.println("port: " + port);
+
+    }
+
+    public void addGroup(String groupName, String ipAddress, String name, int port) {
+        System.out.println("groupName: " + groupName);
+        System.out.println("ipAddress: " + ipAddress);
+        System.out.println("name: " + name);
+        System.out.println("port: " + port);
+    }
+
     private void startServer(int port) {
         communicationService.start(port);
     }
