@@ -3,12 +3,8 @@ package se.gcom.middleware;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.middleware.communicationModule.ChatMessage;
-import se.gcom.middleware.communicationModule.CommunicationGrpcHandler;
-import se.gcom.middleware.communicationModule.CommunicationGrpcSender;
 import se.gcom.middleware.communicationModule.CommunicationService;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 
 import java.util.List;
 
@@ -19,8 +15,6 @@ public class Manager {
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
-
-    private Server server;
 
     public Manager(ChatController chatController, DebugController debugController) {
         this.chatController = chatController;
