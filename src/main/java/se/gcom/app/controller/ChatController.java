@@ -1,5 +1,6 @@
 package se.gcom.app.controller;
 
+import javafx.application.Platform;
 import se.gcom.app.view.ChatView;
 import se.gcom.middleware.Manager;
 
@@ -19,11 +20,13 @@ public class ChatController {
     public void sendMessage(String sender, String text) {
         String result = "Text sent: " + text;
 
-        receiveMessage("Group 1", result);
+        manager.sendMessage("Group1", text);
     }
 
     public void receiveMessage(String sender, String text){
-        chatView.addIncomingMessage(sender, text);
+        Platform.runLater(() ->
+                chatView.addIncomingMessage(sender, text)
+                );
     }
 
     public void addDemo(){

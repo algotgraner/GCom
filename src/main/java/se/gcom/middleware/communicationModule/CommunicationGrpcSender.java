@@ -7,9 +7,14 @@ import io.grpc.ManagedChannelBuilder;
 public class CommunicationGrpcSender {
     //this class will be used to make grpc calls to send messages to other nodes
 
-    public void multicast(ChatMessage msg, List<Integer> ports){
-        for (Integer port : ports){
-            sendToNode("localhost", port, msg);
+    public void multicast(ChatMessage msg, List<String> addresses){
+        for (String address : addresses) {
+            String[] parts = address.split(":");
+            String host = parts[0];
+            int port = Integer.parseInt(parts[1]);
+
+            sendToNode(host, port, msg);
+
         }
     }
 
