@@ -40,6 +40,23 @@ public class ChatController {
         }
     }
 
+    public ChatGroup createGroup(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+
+        String trimmedName = name.trim();
+        ChatGroup group = new ChatGroup(createGroupId(trimmedName), trimmedName);
+        groups.add(group);
+        selectedGroup = group;
+
+        if (manager != null) {
+            manager.addGroup(trimmedName);
+        }
+
+        return group;
+    }
+
     public void sendMessage(String text) {
         if (selectedGroup == null || text == null || text.isBlank()) {
             return;
@@ -52,6 +69,14 @@ public class ChatController {
         }
     }
 
+    public void addUserToSelectedGroup(String ipAddress, String name, int port) {
+        if (selectedGroup == null || manager == null) {
+            return;
+        }
+
+        manager.addUserToGroup(selectedGroup.getId(), ipAddress, name, port);
+    }
+
     public void receiveMessage(String sender, String text) {
         ChatGroup targetGroup = selectedGroup != null ? selectedGroup : groups.get(0);
         Platform.runLater(() ->
@@ -61,5 +86,29 @@ public class ChatController {
 
     public void addDemo(){
         receiveMessage("Group 1", "Hej");
+    }
+
+    private String createGroupId(String name) {
+        String baseId = name.replaceAll("\\s+", "");
+        if (baseId.isEmpty()) {
+            baseId = "Group";
+        }
+
+        String candidate = baseId;
+        int suffix = 1;
+        while (groupIdExists(candidate)) {
+            candidate = baseId + suffix;
+            suffix++;
+        }
+        return candidate;
+    }
+
+    private boolean groupIdExists(String id) {
+        for (ChatGroup group : groups) {
+            if (group.getId().equals(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

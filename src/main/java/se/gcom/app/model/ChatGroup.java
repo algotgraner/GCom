@@ -18,6 +18,10 @@ public class ChatGroup {
         return id;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public ObservableList<ChatMessage> getMessages() {
         return messages;
     }

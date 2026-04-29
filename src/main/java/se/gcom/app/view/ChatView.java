@@ -16,6 +16,8 @@ import se.gcom.app.controller.ChatController;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.app.model.ChatMessage;
 
+import java.util.Optional;
+
 
 public class ChatView {
     private final BorderPane root;
@@ -24,6 +26,9 @@ public class ChatView {
     private final VBox messagesBox = new VBox(10);
     private final TextField inputField = new TextField();
     private final Button sendButton = new Button("Send");
+    private final Button addGroupButton = new Button("+");
+    private final Label selectedGroupTitle = new Label();
+    private final Button addUserButton = new Button("Add User");
     private ObservableList<ChatMessage> visibleMessages;
     private final ListChangeListener<ChatMessage> messageListener = change -> renderMessages();
 
@@ -44,6 +49,16 @@ public class ChatView {
     }
 
     private VBox createRightPane() {
+        selectedGroupTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        addUserButton.setOnAction(e -> openAddUserDialog());
+
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+
+        HBox chatHeader = new HBox(10, selectedGroupTitle, headerSpacer, addUserButton);
+        chatHeader.setAlignment(Pos.CENTER_LEFT);
+        chatHeader.setPadding(new Insets(0, 25, 0, 10));
+
         messagesBox.setPadding(new Insets(10));
         messagesBox.setFillWidth(true);
 
@@ -59,6 +74,7 @@ public class ChatView {
         inputBar.setPadding(new Insets(8,25,8,12));
 
         VBox rightPane = new VBox(10,
+                chatHeader,
                 scrollPane,
                 inputBar
         );
@@ -73,16 +89,27 @@ public class ChatView {
         Label title = new Label("Groups");
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
+        addGroupButton.setMinWidth(32);
+        addGroupButton.setOnAction(e -> openCreateGroupDialog());
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox titleBar = new HBox(8, title, spacer, addGroupButton);
+        titleBar.setAlignment(Pos.CENTER_LEFT);
+
         groups.setItems(chatController.getGroups());
         groups.getSelectionModel().selectedItemProperty().addListener((obs, oldGroup, newGroup) -> {
             chatController.selectGroup(newGroup);
             showMessages(newGroup);
+            updateSelectedGroupHeader(newGroup);
         });
 
         groups.getSelectionModel().selectFirst();
         showMessages(groups.getSelectionModel().getSelectedItem());
+        updateSelectedGroupHeader(groups.getSelectionModel().getSelectedItem());
 
-        VBox leftPane = new VBox(10, title, groups);
+        VBox leftPane = new VBox(10, titleBar, groups);
         leftPane.setPadding(new Insets(0, 12, 0, 0));
         leftPane.setPrefWidth(260);
         VBox.setVgrow(groups, Priority.ALWAYS);
@@ -127,6 +154,95 @@ public class ChatView {
 
         chatController.sendMessage(text);
         inputField.clear();
+    }
+
+    private void openCreateGroupDialog() {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("New Group");
+        dialog.setHeaderText("Create group");
+
+        ButtonType createButtonType = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        TextField groupNameField = new TextField();
+        groupNameField.setPromptText("Group name");
+        groupNameField.setPrefColumnCount(24);
+
+        VBox content = new VBox(8, new Label("Group name"), groupNameField);
+        content.setPadding(new Insets(8, 0, 0, 0));
+        dialog.getDialogPane().setContent(content);
+
+        dialog.setResultConverter(button -> {
+            if (button == createButtonType) {
+                return groupNameField.getText();
+            }
+            return null;
+        });
+
+        dialog.setOnShown(e -> groupNameField.requestFocus());
+        dialog.showAndWait().ifPresent(this::createGroup);
+    }
+
+    private void createGroup(String groupName) {
+        ChatGroup group = chatController.createGroup(groupName);
+        if (group != null) {
+            groups.getSelectionModel().select(group);
+        }
+    }
+
+    private void openAddUserDialog() {
+        Dialog<UserInput> dialog = new Dialog<>();
+        dialog.setTitle("Add User");
+        dialog.setHeaderText("Add user to " + selectedGroupTitle.getText());
+
+        ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Name");
+
+        TextField ipAddressField = new TextField();
+        ipAddressField.setPromptText("IP address");
+
+        TextField portField = new TextField();
+        portField.setPromptText("Port");
+
+        GridPane content = new GridPane();
+        content.setHgap(10);
+        content.setVgap(10);
+        content.setPadding(new Insets(8, 0, 0, 0));
+        content.addRow(0, new Label("Name"), nameField);
+        content.addRow(1, new Label("IP address"), ipAddressField);
+        content.addRow(2, new Label("Port"), portField);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.setResultConverter(button -> {
+            if (button != addButtonType) {
+                return null;
+            }
+
+            try {
+                return new UserInput(
+                        ipAddressField.getText().trim(),
+                        nameField.getText().trim(),
+                        Integer.parseInt(portField.getText().trim())
+                );
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        });
+
+        dialog.setOnShown(e -> nameField.requestFocus());
+
+        Optional<UserInput> result = dialog.showAndWait();
+        result.ifPresent(user ->
+                chatController.addUserToSelectedGroup(user.ipAddress(), user.name(), user.port())
+        );
+    }
+
+    private void updateSelectedGroupHeader(ChatGroup group) {
+        selectedGroupTitle.setText(group == null ? "" : group.getName());
+        addUserButton.setDisable(group == null);
     }
 
     private void showMessages(ChatGroup group) {
@@ -213,5 +329,8 @@ public class ChatView {
 
     public Parent getRoot() {
         return root;
+    }
+
+    private record UserInput(String ipAddress, String name, int port) {
     }
 }
