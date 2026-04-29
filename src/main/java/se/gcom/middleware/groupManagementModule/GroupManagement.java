@@ -25,6 +25,7 @@ public class GroupManagement {
         groupAddressMap = new HashMap<>();
         String ip = getIpAddress();
         address = ip + ":" + port;
+        groupAddressMap.put("Group1", new ArrayList<>(List.of("127.0.0.1:5001")));
     }
 
 
