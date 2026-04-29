@@ -25,11 +25,14 @@ public class Manager {
     public Manager(ChatController chatController, DebugController debugController) {
         this.chatController = chatController;
         this.debugController = debugController;
-        this.groupManagement = new GroupManagement(5001);
+    }
+
+    public void start(int port){
+        this.groupManagement = new GroupManagement(port);
         this.communicationGrpcSender = new CommunicationGrpcSender();
         this.communicationGrpcHandler = new CommunicationGrpcHandler(this);
 
-        startServer(5001);
+        startServer(port);
     }
 
     public void sendMessage(String groupName, String message){
