@@ -5,6 +5,7 @@ import se.gcom.app.controller.DebugController;
 import se.gcom.middleware.communicationModule.ChatMessage;
 import se.gcom.middleware.communicationModule.CommunicationGrpcHandler;
 import se.gcom.middleware.communicationModule.CommunicationGrpcSender;
+import se.gcom.middleware.communicationModule.CommunicationService;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -17,8 +18,7 @@ public class Manager {
     DebugController debugController;
 
     GroupManagement groupManagement;
-    CommunicationGrpcSender communicationGrpcSender;
-    CommunicationGrpcHandler communicationGrpcHandler;
+    CommunicationService communicationService;
 
     private Server server;
 
@@ -29,9 +29,7 @@ public class Manager {
 
     public void start(int port){
         this.groupManagement = new GroupManagement(port);
-        this.communicationGrpcSender = new CommunicationGrpcSender();
-        this.communicationGrpcHandler = new CommunicationGrpcHandler(this);
-
+        communicationService = new CommunicationService(this);
         startServer(port);
     }
 
@@ -44,7 +42,7 @@ public class Manager {
                         .setReceiverId("Test")
                         .setPayload(message)
                         .build();
-        communicationGrpcSender.multicast(msg, addresses);
+        communicationService.multicast(msg, addresses);
     }
 
     public void receiveMessage(ChatMessage msg){
@@ -52,15 +50,7 @@ public class Manager {
     }
 
     private void startServer(int port) {
-        try {
-            server = ServerBuilder.forPort(port)
-                    .addService(communicationGrpcHandler)
-                    .build()
-                    .start();
-            System.out.println("Listening on port: " + port);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        communicationService.start(port);
     }
 
 }
