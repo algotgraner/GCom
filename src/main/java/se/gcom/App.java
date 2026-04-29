@@ -5,7 +5,9 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import se.gcom.app.controller.ChatController;
+import se.gcom.app.controller.DebugController;
 import se.gcom.app.view.ChatView;
+import se.gcom.middleware.Manager;
 
 public class App extends Application {
 
@@ -14,7 +16,14 @@ public class App extends Application {
         Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
         ChatController chatController = new ChatController();
-        ChatView chatView = new ChatView();
+        DebugController debugController = new DebugController();
+        Manager manager = new Manager(chatController, debugController);
+
+        chatController.setManager(manager);
+        debugController.setManager(debugController);
+
+        ChatView chatView = new ChatView(chatController);
+        chatController.setChatView(chatView);
 
         Stage.setTitle("GCom Chat");
         Stage.setScene(new Scene(chatView.getRoot(), 900, 600));
