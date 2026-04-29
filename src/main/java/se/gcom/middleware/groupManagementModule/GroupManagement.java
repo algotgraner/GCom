@@ -20,11 +20,11 @@ public class GroupManagement {
         groupAddressMap = new HashMap<>();
         String ip = getIpAddress();
         address = ip + ":" + port;
-        groupAddressMap.put("Group1", new ArrayList<>(List.of("130.239.232.131:5001")));
+        groupAddressMap.put("Group1", new ArrayList<>(List.of("172.20.10.2:5001")));
         if (namingServerCommunication.isUp()){
             namingServerIsUp = true;
         } else{
-            throw new NamingServerIsDown();
+            //throw new NamingServerIsDown();
         }
     }
 
