@@ -26,11 +26,7 @@ public class Manager {
     public Manager(ChatController chatController, DebugController debugController) {
         this.chatController = chatController;
         this.debugController = debugController;
-        //try {
-            this.groupManagement = new GroupManagement(5001);
-        //} catch (GroupManagement.NamingServerIsDown e){
-
-        //}
+        this.groupManagement = new GroupManagement(5001);
         this.communicationGrpcSender = new CommunicationGrpcSender();
         this.communicationGrpcHandler = new CommunicationGrpcHandler(this);
 

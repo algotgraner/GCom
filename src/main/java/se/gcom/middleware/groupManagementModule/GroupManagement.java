@@ -16,18 +16,17 @@ public class GroupManagement {
 
     public GroupManagement(int port){
         namingServerCommunication = new NamingServerCommunication();
-        namingServerIsUp = namingServerCommunication.isUp();
         groupAddressMap = new HashMap<>();
         String ip = getIpAddress();
         address = ip + ":" + port;
+        namingServerIsUp = namingServerCommunication.isUp();
         groupAddressMap.put("Group1", new ArrayList<>(List.of("172.20.10.2:5001")));
-        if (namingServerCommunication.isUp()){
-            namingServerIsUp = true;
-        } else{
-            //throw new NamingServerIsDown();
-        }
+
     }
 
+    public boolean isNamingServerIsUp() {
+        return namingServerIsUp;
+    }
 
     public List<String > getAddresses(String groupName){
         return new ArrayList<>(groupAddressMap.get(groupName));
@@ -70,12 +69,6 @@ public class GroupManagement {
 
     public void shutdown(){
         namingServerCommunication.shutdown();
-    }
-
-    public static class NamingServerIsDown extends RuntimeException {
-        public NamingServerIsDown() {
-            super("Naming server is down");
-        }
     }
 
 }
