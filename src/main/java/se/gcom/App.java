@@ -20,10 +20,11 @@ public class App extends Application {
         Manager manager = new Manager(chatController, debugController);
 
         chatController.setManager(manager);
-        debugController.setManager(debugController);
+        debugController.setManager(manager);
 
         ChatView chatView = new ChatView(chatController);
-        chatController.setChatView(chatView);
+
+        manager.start(5000);
 
         Stage.setTitle("GCom Chat");
         Stage.setScene(new Scene(chatView.getRoot(), 900, 600));

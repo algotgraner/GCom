@@ -23,7 +23,11 @@ public class GroupManagement {
     }
 
     public List<String > getAddresses(String groupName){
-        return new ArrayList<>(groupAddressMap.get(groupName));
+        ArrayList<String> addresses = groupAddressMap.get(groupName);
+        if (addresses == null) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(addresses);
     }
     public void createNewGroup(String groupName, ArrayList<String> addresses){
         groupAddressMap.put(groupName, addresses);
