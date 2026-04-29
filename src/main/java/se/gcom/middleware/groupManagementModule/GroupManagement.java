@@ -7,8 +7,9 @@ import java.util.List;
 public class GroupManagement {
     private NamingServerCommunication namingServerCommunication;
     private HashMap<String, ArrayList<String>> groupAddressMap;
+    private String address;
 
-    public GroupManagement(){
+    public GroupManagement(int port){
         namingServerCommunication = new NamingServerCommunication();
         if (namingServerCommunication.isUp()){
             System.out.println("Up");
@@ -16,18 +17,10 @@ public class GroupManagement {
             System.out.println("Down");
         }
         groupAddressMap = new HashMap<>();
+        String ip = getIpAddress();
+        address = ip + ":" + port;
     }
 
-    public static void main(String[] args) {
-        GroupManagement g = new GroupManagement();
-        ArrayList<String> l = new ArrayList<>();
-        l.add("127.0.0.2");
-        g.createNewGroup("hej", l);
-        g.groupAddressMap.clear();
-        g.joinGroup("hej");
-        System.out.println(g.getAddresses("hej"));
-        g.shutdown();
-    }
     public List<String > getAddresses(String groupName){
         return new ArrayList<>(groupAddressMap.get(groupName));
     }
@@ -38,11 +31,16 @@ public class GroupManagement {
 
     public void joinGroup(String groupName){
         groupAddressMap.put(groupName,namingServerCommunication.getAddresses(groupName));
-        namingServerCommunication.addToGroup(groupName, "127.0.0.1"); //Placeholder IP
+        namingServerCommunication.addToGroup(groupName, this.address); //Placeholder IP
+    }
+
+    public void leaveGroup(String groupName){
+        namingServerCommunication.removeFromGroup(groupName, this.address);
+        groupAddressMap.remove(groupName);
     }
 
     private String getIpAddress(){
-        return "jeh";
+        return "127.0.0.1";
     }
 
     public void shutdown(){

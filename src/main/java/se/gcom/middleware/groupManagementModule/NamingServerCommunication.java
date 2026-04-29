@@ -58,6 +58,18 @@ public class NamingServerCommunication {
         }
         return new ArrayList<>(addresses);
     }
+
+    public void removeFromGroup(String groupName, String address){
+        try {
+            stub.removeFromGroup(
+                    AddToGroupRequest.newBuilder()
+                            .setGroupName(groupName)
+                            .setAddress(address)
+                            .build());
+        } catch (StatusRuntimeException e){
+            System.out.println(e.getMessage());
+        }
+    }
     public boolean isUp(){
         try {
             stub.isUp(Empty.newBuilder().build());
