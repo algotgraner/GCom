@@ -1,6 +1,11 @@
 package se.gcom.app.controller;
 
+import se.gcom.middleware.Manager;
+
 public class DebugController {
-    public void setManager(DebugController debugController) {
+    private Manager manager;
+
+    public void setManager(Manager manager) {
+        this.manager = manager;
     }
 }
