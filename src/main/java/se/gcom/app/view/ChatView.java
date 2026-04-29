@@ -157,7 +157,7 @@ public class ChatView {
     }
 
     private void openCreateGroupDialog() {
-        Dialog<String> dialog = new Dialog<>();
+        Dialog<GroupInput> dialog = new Dialog<>();
         dialog.setTitle("New Group");
         dialog.setHeaderText("Create group");
 
@@ -166,25 +166,54 @@ public class ChatView {
 
         TextField groupNameField = new TextField();
         groupNameField.setPromptText("Group name");
-        groupNameField.setPrefColumnCount(24);
 
-        VBox content = new VBox(8, new Label("Group name"), groupNameField);
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+
+        TextField ipAddressField = new TextField();
+        ipAddressField.setPromptText("IP address");
+
+        TextField portField = new TextField();
+        portField.setPromptText("Port");
+
+        GridPane content = new GridPane();
+        content.setHgap(10);
+        content.setVgap(10);
         content.setPadding(new Insets(8, 0, 0, 0));
+        content.addRow(0, new Label("Group name"), groupNameField);
+        content.addRow(1, new Label("Username"), usernameField);
+        content.addRow(2, new Label("IP address"), ipAddressField);
+        content.addRow(3, new Label("Port"), portField);
         dialog.getDialogPane().setContent(content);
 
         dialog.setResultConverter(button -> {
-            if (button == createButtonType) {
-                return groupNameField.getText();
+            if (button != createButtonType) {
+                return null;
             }
-            return null;
+
+            try {
+                return new GroupInput(
+                        groupNameField.getText().trim(),
+                        ipAddressField.getText().trim(),
+                        usernameField.getText().trim(),
+                        Integer.parseInt(portField.getText().trim())
+                );
+            } catch (NumberFormatException e) {
+                return null;
+            }
         });
 
         dialog.setOnShown(e -> groupNameField.requestFocus());
         dialog.showAndWait().ifPresent(this::createGroup);
     }
 
-    private void createGroup(String groupName) {
-        ChatGroup group = chatController.createGroup(groupName);
+    private void createGroup(GroupInput groupInput) {
+        ChatGroup group = chatController.createGroup(
+                groupInput.groupName(),
+                groupInput.ipAddress(),
+                groupInput.username(),
+                groupInput.port()
+        );
         if (group != null) {
             groups.getSelectionModel().select(group);
         }
@@ -332,5 +361,8 @@ public class ChatView {
     }
 
     private record UserInput(String ipAddress, String name, int port) {
+    }
+
+    private record GroupInput(String groupName, String ipAddress, String username, int port) {
     }
 }

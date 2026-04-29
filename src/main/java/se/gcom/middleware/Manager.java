@@ -46,6 +46,7 @@ public class Manager {
                         .setPayload(message)
                         .build();
         communicationGrpcSender.multicast(msg, addresses);
+        System.out.println("Sent message: " + message + " to: " + groupName);
     }
 
     public void receiveMessage(ChatMessage msg){
@@ -60,8 +61,11 @@ public class Manager {
 
     }
 
-    public void addGroup(String groupName) {
+    public void addGroup(String groupName, String ipAddress, String name, int port) {
         System.out.println("groupName: " + groupName);
+        System.out.println("ipAddress: " + ipAddress);
+        System.out.println("name: " + name);
+        System.out.println("port: " + port);
     }
 
     private void startServer(int port) {
