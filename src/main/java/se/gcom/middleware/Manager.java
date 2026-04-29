@@ -1,5 +1,6 @@
 package se.gcom.middleware;
 
+import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.middleware.communicationModule.ChatMessage;
