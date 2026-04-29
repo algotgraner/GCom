@@ -6,13 +6,14 @@ import se.gcom.middleware.Manager;
 public class ChatController {
 
     ChatView chatView;
+    Manager manager;
 
     public void setChatView(ChatView chatView){
         this.chatView = chatView;
     }
 
     public void setManager(Manager manager) {
-
+        this.manager = manager;
     }
 
     public void sendMessage(String sender, String text) {
