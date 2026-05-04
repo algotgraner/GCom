@@ -16,7 +16,8 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
         switch (msg.getContentCase()){
             case CHATMESSAGE:
                 ChatMessage chatMessage = msg.getChatMessage();
-                manager.receiveMessage(chatMessage);
+                // incomingMessage uses the OrderingModule
+                manager.handleIncomingMessage(chatMessage);
 
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
@@ -26,7 +27,8 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
 
             case GROUPMEMBERSHIP:
                 GroupMembership groupMembership = msg.getGroupMembership();
-                manager.receiveMessage(groupMembership);
+                // here the message can be received right away
+                manager.deliverIncomingMessage(groupMembership);
                 break;
         }
 
