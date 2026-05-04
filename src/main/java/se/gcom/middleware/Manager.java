@@ -68,7 +68,7 @@ public class Manager {
 
     public void deliverIncomingMessage(ChatMessage msg){
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
-        chatController.receiveMessage(msg.getSenderId(), msg.getPayload(), outgoing);
+        chatController.receiveMessage(msg.getSenderId(), msg.getGroupId(), msg.getPayload(), outgoing);
     }
 
     public void deliverIncomingMessage(GroupMembership msg) {
