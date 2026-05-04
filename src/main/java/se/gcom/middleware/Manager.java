@@ -58,8 +58,10 @@ public class Manager {
     public void receiveMessage(GroupMembership msg) {
         if (msg.getJoining()) {
             groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+            System.out.println("Received join message");
         } else {
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
+            System.out.println("Received remove message");
         }
     }
 
@@ -93,7 +95,6 @@ public class Manager {
     }
 
     public void leaveGroup(ChatGroup group) {
-        groupManagement.leaveGroup(group.getId());
         GroupMembership g = GroupMembership.newBuilder()
                 .setGroupId(group.getId())
                 .setSenderId(groupManagement.getAddress())
@@ -102,7 +103,9 @@ public class Manager {
                 .build();
         Message m = Message.newBuilder().setGroupMembership(g).build();
         ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(group.getName()));
+        groupManagement.leaveGroup(group.getId());
         addresses.remove(groupManagement.getAddress());
+        System.out.println("Sending Leave to:" + addresses);
         communicationService.multicast(m, addresses);
     }
 }
