@@ -13,7 +13,7 @@ public class CommunicationService {
 
     public CommunicationService(Manager manager) {
         this.manager = manager;
-        this.sender = new CommunicationGrpcSender();
+        this.sender = new CommunicationGrpcSender(manager);
         this.handler = new CommunicationGrpcHandler(manager);
     }
 
