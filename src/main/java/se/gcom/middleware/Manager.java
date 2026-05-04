@@ -38,7 +38,7 @@ public class Manager {
         ChatMessage msg = ChatMessage.newBuilder()
                         .setMessageId("1")
                         .setSenderId(groupManagement.getAddress())
-                        .setReceiverId("Test")
+                        .setGroupId("SET GROUP HERE")
                         .setPayload(message)
                         .build();
 

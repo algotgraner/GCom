@@ -20,7 +20,7 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
 
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
-                System.out.println(chatMessage.getReceiverId());
+                System.out.println(chatMessage.getGroupId());
                 System.out.println(chatMessage.getMessageId());
                 break;
 

@@ -17,7 +17,7 @@ message Message {
 message ChatMessage {
   string messageId = 1;
   string senderId = 2;
-  string receiverId = 3;
+  string groupId= 3;
   string payload = 4;
   map<string, int32> vectorClock = 5;
 }
