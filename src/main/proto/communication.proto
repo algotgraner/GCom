@@ -4,7 +4,14 @@ option java_package = "se.gcom.middleware.communicationModule";
 option java_multiple_files = true;
 
 service CommunicationService{
-  rpc SendMessage(ChatMessage) returns (Ack);
+  rpc SendMessage(Message) returns (Ack);
+}
+
+message Message {
+  oneof content {
+    ChatMessage chatMessage = 1;
+    GroupMembership groupMembership = 2;
+  }
 }
 
 message ChatMessage {
@@ -12,6 +19,13 @@ message ChatMessage {
   string senderId = 2;
   string receiverId = 3;
   string payload = 4;
+}
+
+message GroupMembership{
+  string messageId = 1;
+  string senderId = 2;
+  string groupId = 3;
+  bool joining = 4;
 }
 
 message Ack {

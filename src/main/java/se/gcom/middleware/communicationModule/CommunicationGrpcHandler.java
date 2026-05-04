@@ -1,15 +1,34 @@
 package se.gcom.middleware.communicationModule;
 
 import io.grpc.stub.StreamObserver;
+import se.gcom.middleware.Manager;
 
 public class CommunicationGrpcHandler extends CommunicationServiceGrpc.CommunicationServiceImplBase {
-    @Override
-    public void sendMessage(ChatMessage request, StreamObserver<Ack> responseObserver) {
 
-        System.out.println("Received: " + request.getPayload());
-        System.out.println(request.getSenderId());
-        System.out.println(request.getReceiverId());
-        System.out.println(request.getMessageId());
+    private final Manager manager;
+    public CommunicationGrpcHandler(Manager manager) {
+        this.manager = manager;
+    }
+
+    @Override
+    public void sendMessage(Message msg, StreamObserver<Ack> responseObserver) {
+
+        switch (msg.getContentCase()){
+            case CHATMESSAGE:
+                ChatMessage chatMessage = msg.getChatMessage();
+                manager.receiveMessage(chatMessage);
+
+                System.out.println("Received: " + chatMessage.getPayload());
+                System.out.println(chatMessage.getSenderId());
+                System.out.println(chatMessage.getReceiverId());
+                System.out.println(chatMessage.getMessageId());
+                break;
+
+            case GROUPMEMBERSHIP:
+                GroupMembership groupMembership = msg.getGroupMembership();
+                manager.receiveMessage(groupMembership);
+                break;
+        }
 
         Ack ack = Ack.newBuilder().setSuccess(true).build();
         responseObserver.onNext(ack);
