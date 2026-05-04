@@ -81,6 +81,9 @@ public class GroupManagement {
     public void addNewMember(String groupName, String ipAddress){
         groupAddressMap.get(groupName).add(ipAddress);
     }
+    public void removeMember(String groupName, String ipAddress){
+        groupAddressMap.get(groupName).remove(ipAddress);
+    }
 
 
     public void shutdown(){

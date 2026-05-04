@@ -55,7 +55,11 @@ public class Manager {
         chatController.receiveMessage(msg.getSenderId(), msg.getPayload(), outgoing);
     }
     public void receiveMessage(GroupMembership msg){
-        groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+        if(msg.getJoining()){
+            groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+        } else {
+            groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
+        }
     }
 
     public void addUserToGroup(String groupName, String ipAddress, String name, int port) {
@@ -97,6 +101,16 @@ public class Manager {
     }
 
     public void leaveGroup(ChatGroup group) {
-        System.out.println("Leaving group: " + group.getName());
+        groupManagement.leaveGroup(group.getId());
+        GroupMembership g = GroupMembership.newBuilder()
+                .setGroupId(group.getId())
+                .setSenderId(groupManagement.getAddress())
+                .setJoining(false)
+                .setMessageId("1")
+                .build();
+        Message m = Message.newBuilder().setGroupMembership(g).build();
+        ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(group.getName()));
+        addresses.remove(groupManagement.getAddress());
+        communicationService.multicast(m, addresses);
     }
 }
