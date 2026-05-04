@@ -27,6 +27,7 @@ public class ChatView {
     private final TextField inputField = new TextField();
     private final Button sendButton = new Button("Send");
     private final Button addGroupButton = new Button("+");
+    private final Button joinGroupButton = new Button("Join");
     private final Label selectedGroupTitle = new Label();
     private final Button addUserButton = new Button("Add User");
     private ObservableList<ChatMessage> visibleMessages;
@@ -92,10 +93,13 @@ public class ChatView {
         addGroupButton.setMinWidth(32);
         addGroupButton.setOnAction(e -> openCreateGroupDialog());
 
+        joinGroupButton.setMinWidth(32);
+        joinGroupButton.setOnAction(e -> openJoinGroupDialog());
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox titleBar = new HBox(8, title, spacer, addGroupButton);
+        HBox titleBar = new HBox(8, title, spacer, joinGroupButton, addGroupButton);
         titleBar.setAlignment(Pos.CENTER_LEFT);
 
         groups.setItems(chatController.getGroups());
@@ -205,6 +209,44 @@ public class ChatView {
 
         dialog.setOnShown(e -> groupNameField.requestFocus());
         dialog.showAndWait().ifPresent(this::createGroup);
+    }
+
+    private void openJoinGroupDialog() {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Join Group");
+        dialog.setHeaderText("Join group");
+
+        ButtonType joinButtonType = new ButtonType("Join", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(joinButtonType, ButtonType.CANCEL);
+
+        TextField groupNameField = new TextField();
+        groupNameField.setPromptText("Group name");
+
+        GridPane content = new GridPane();
+        content.setHgap(10);
+        content.setVgap(10);
+        content.setPadding(new Insets(8, 0, 0, 0));
+        content.addRow(0, new Label("Group name"), groupNameField);
+        dialog.getDialogPane().setContent(content);
+
+        dialog.setResultConverter(button -> {
+            if (button != joinButtonType) {
+                return null;
+            }
+
+            return groupNameField.getText().trim();
+
+        });
+
+        dialog.setOnShown(e -> groupNameField.requestFocus());
+        dialog.showAndWait().ifPresent(this::joinGroup);
+    }
+
+    private void joinGroup(String name){
+        ChatGroup group = chatController.joinGroup(name);
+        if (group != null) {
+            groups.getSelectionModel().select(group);
+        }
     }
 
     private void createGroup(GroupInput groupInput) {
