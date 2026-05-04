@@ -45,7 +45,7 @@ public class Manager {
 
         Message m = Message.newBuilder().setChatMessage(msg).build();
 
-        System.out.println(addresses);
+        System.out.println("Sent to:" + addresses);
 
         communicationService.multicast(m, addresses);
     }
@@ -71,10 +71,6 @@ public class Manager {
     }
 
     public void addGroup(String groupName, String ipAddress, String name, int port) {
-        System.out.println("groupName: " + groupName);
-        System.out.println("ipAddress: " + ipAddress);
-        System.out.println("name: " + name);
-        System.out.println("port: " + port);
         groupManagement.createNewGroup(groupName, new ArrayList<>());
     }
 
@@ -83,7 +79,6 @@ public class Manager {
     }
 
     public void joinGroup(String name) {
-        System.out.println("Join groupName: " + name);
         try {
 
             ArrayList<String> addresses = groupManagement.joinGroup(name);

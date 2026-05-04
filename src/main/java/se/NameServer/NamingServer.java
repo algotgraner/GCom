@@ -32,6 +32,7 @@ public class NamingServer {
         groupAddressMap.get(groupName).remove(address);
         if (groupAddressMap.get(groupName).isEmpty()){
             groupAddressMap.remove(groupName);
+            System.out.println("Removed group: " + groupName);
         }
     }
 
