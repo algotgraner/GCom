@@ -75,11 +75,19 @@ public class ChatController {
         manager.addUserToGroup(selectedGroup.getId(), ipAddress, name, port);
     }
 
-    public void receiveMessage(String sender, String text, boolean outgoing) {
-        ChatGroup targetGroup = selectedGroup != null ? selectedGroup : groups.get(0);
+
+    public void receiveMessage(String sender,String groupName, String text, boolean outgoing) {
+        // Find the correct group using your existing method
+        ChatGroup targetGroup = findGroup(groupName);
+
+        // Fallback if group not found
+        if (targetGroup == null) {
+            targetGroup = selectedGroup != null ? selectedGroup : groups.get(0);
+        }
         System.out.println("Outgoing: " + outgoing);
+        ChatGroup finalTargetGroup = targetGroup;
         Platform.runLater(() ->
-                targetGroup.getMessages().add(new ChatMessage(sender, text, outgoing))
+                finalTargetGroup.getMessages().add(new ChatMessage(sender, text, outgoing))
         );
     }
 
