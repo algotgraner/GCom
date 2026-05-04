@@ -10,6 +10,7 @@ import se.gcom.middleware.communicationModule.CommunicationService;
 import se.gcom.middleware.communicationModule.GroupMembership;
 import se.gcom.middleware.communicationModule.Message;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
+import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,9 @@ public class Manager {
 
     ChatController chatController;
     DebugController debugController;
+    OrderingModule orderingModule;
+    String myAddress;
+    private long messageCounter;
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -27,35 +31,47 @@ public class Manager {
         this.debugController = debugController;
     }
 
-    public void start() {
+    public void start(){
         communicationService = new CommunicationService(this);
         int port = startServer();
         this.groupManagement = new GroupManagement(port);
+        this.myAddress = groupManagement.getAddress();
+        this.orderingModule = new OrderingModule(this, myAddress);
     }
 
-    public void sendMessage(String groupName, String message) {
+    private String generateMessageId() {
+        return groupManagement.getAddress() + "--" + (++messageCounter);
+    }
+
+    public void sendMessage(String groupName, String message){
         List<String> addresses = groupManagement.getAddresses(groupName);
         // Create the message
         ChatMessage msg = ChatMessage.newBuilder()
-                .setMessageId("1")
-                .setSenderId(groupManagement.getAddress())
-                .setReceiverId("Test")
-                .setPayload(message)
-                .build();
+                        .setMessageId(generateMessageId())
+                        .setSenderId(groupManagement.getAddress())
+                        .setGroupId(groupName)
+                        .setPayload(message)
+                        .build();
 
-        Message m = Message.newBuilder().setChatMessage(msg).build();
-
-        System.out.println("Sent to:" + addresses);
-
+        // let ordering module append the vector clock if needed
+        ChatMessage finalMsg = orderingModule.handleOutgoingMessage(msg, msg.getGroupId());
+        Message m = Message.newBuilder().setChatMessage(finalMsg).build();
+        // print all messages for debug
+        System.out.println(addresses);
+        // let communication module send the message
         communicationService.multicast(m, addresses);
     }
 
-    public void receiveMessage(ChatMessage msg) {
+    public void handleIncomingMessage(ChatMessage msg){
+        orderingModule.handleIncomingMessage(msg);
+    }
+
+    public void deliverIncomingMessage(ChatMessage msg){
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
         chatController.receiveMessage(msg.getSenderId(), msg.getPayload(), outgoing);
     }
 
-    public void receiveMessage(GroupMembership msg) {
+    public void deliverIncomingMessage(GroupMembership msg) {
         if (msg.getJoining()) {
             groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
             System.out.println("Received join message");
@@ -108,4 +124,5 @@ public class Manager {
         System.out.println("Sending Leave to:" + addresses);
         communicationService.multicast(m, addresses);
     }
+
 }
