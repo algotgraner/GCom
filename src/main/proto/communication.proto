@@ -14,6 +14,13 @@ message ChatMessage {
   string payload = 4;
 }
 
+message GroupMembership{
+  string messageId = 1;
+  string senderId = 2;
+  string groupId = 3;
+  bool joining = 4;
+}
+
 message Ack {
   bool success = 1;
 }
