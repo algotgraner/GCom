@@ -63,4 +63,7 @@ public class Manager {
         communicationService.start(port);
     }
 
+    public void joinGroup(String name) {
+        System.out.println("Join groupName: " + name);
+    }
 }
