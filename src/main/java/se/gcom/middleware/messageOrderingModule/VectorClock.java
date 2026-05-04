@@ -22,4 +22,9 @@ public class VectorClock {
     public Map<String, Integer> attachClock(){
         return new ConcurrentHashMap<>(clock);
     }
-}
+
+    public static VectorClock fromProto(Map<String, Integer> protoMap) {
+        VectorClock vc = new VectorClock();
+        vc.clock.putAll(protoMap);
+        return vc;
+    }}
