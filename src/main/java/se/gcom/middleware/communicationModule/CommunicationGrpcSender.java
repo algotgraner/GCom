@@ -17,14 +17,15 @@ public class CommunicationGrpcSender {
     public CommunicationGrpcSender(Manager manager) {
         this.manager = manager;
     }
-    public void multicast(ChatMessage msg, List<String> addresses){
+
+    public void multicast(Message msg, List<String> addresses){
         for (String address : addresses) {
             sendToNode(address, msg);
 
         }
     }
 
-    private void sendToNode(String address, ChatMessage msg){
+    private void sendToNode(String address, Message msg){
         ManagedChannel channel = getChannel(address);
         try {
             CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
