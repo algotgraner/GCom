@@ -24,7 +24,7 @@ public class App extends Application {
 
         ChatView chatView = new ChatView(chatController);
 
-        manager.start(5001);
+        manager.start();
 
         Stage.setTitle("GCom Chat");
         Stage.setScene(new Scene(chatView.getRoot(), 900, 600));

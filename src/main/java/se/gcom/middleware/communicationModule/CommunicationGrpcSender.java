@@ -7,7 +7,7 @@ import io.grpc.ManagedChannelBuilder;
 public class CommunicationGrpcSender {
     //this class will be used to make grpc calls to send messages to other nodes
 
-    public void multicast(ChatMessage msg, List<String> addresses){
+    public void multicast(Message msg, List<String> addresses){
         for (String address : addresses) {
             String[] parts = address.split(":");
             String host = parts[0];
@@ -18,7 +18,7 @@ public class CommunicationGrpcSender {
         }
     }
 
-    private void sendToNode(String host, int port, ChatMessage msg){
+    private void sendToNode(String host, int port, Message msg){
         try {
             ManagedChannel channel = ManagedChannelBuilder
                     .forAddress(host, port)

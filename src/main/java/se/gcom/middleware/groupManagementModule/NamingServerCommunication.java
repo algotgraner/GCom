@@ -54,7 +54,7 @@ public class NamingServerCommunication {
             );
             addresses = response.getAddressesList();
         } catch (StatusRuntimeException e){
-            System.out.println(e.getMessage());
+            return null;
         }
         return new ArrayList<>(addresses);
     }

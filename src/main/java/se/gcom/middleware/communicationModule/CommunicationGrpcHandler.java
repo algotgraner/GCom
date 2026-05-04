@@ -11,14 +11,24 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
     }
 
     @Override
-    public void sendMessage(ChatMessage msg, StreamObserver<Ack> responseObserver) {
+    public void sendMessage(Message msg, StreamObserver<Ack> responseObserver) {
 
-        manager.receiveMessage(msg);
+        switch (msg.getContentCase()){
+            case CHATMESSAGE:
+                ChatMessage chatMessage = msg.getChatMessage();
+                manager.receiveMessage(chatMessage);
 
-        System.out.println("Received: " + msg.getPayload());
-        System.out.println(msg.getSenderId());
-        System.out.println(msg.getReceiverId());
-        System.out.println(msg.getMessageId());
+                System.out.println("Received: " + chatMessage.getPayload());
+                System.out.println(chatMessage.getSenderId());
+                System.out.println(chatMessage.getReceiverId());
+                System.out.println(chatMessage.getMessageId());
+                break;
+
+            case GROUPMEMBERSHIP:
+                GroupMembership groupMembership = msg.getGroupMembership();
+                manager.receiveMessage(groupMembership);
+                break;
+        }
 
         Ack ack = Ack.newBuilder().setSuccess(true).build();
         responseObserver.onNext(ack);

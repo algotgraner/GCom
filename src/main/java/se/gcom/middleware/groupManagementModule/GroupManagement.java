@@ -1,5 +1,7 @@
 package se.gcom.middleware.groupManagementModule;
 
+import se.gcom.middleware.communicationModule.GroupMembership;
+
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -43,9 +45,11 @@ public class GroupManagement {
         }
     }
 
-    public void joinGroup(String groupName){
-        groupAddressMap.put(groupName,namingServerCommunication.getAddresses(groupName));
-        namingServerCommunication.addToGroup(groupName, this.address); //Placeholder IP
+    public ArrayList<String> joinGroup(String groupName){
+        ArrayList<String> addresses = namingServerCommunication.getAddresses(groupName);
+        groupAddressMap.put(groupName, addresses);
+        namingServerCommunication.addToGroup(groupName, this.address);
+        return addresses;
     }
     public void joinGroup(String groupName, ArrayList<String> addresses){
         groupAddressMap.put(groupName, addresses);
@@ -68,6 +72,13 @@ public class GroupManagement {
             System.out.println(e.getMessage());
         }
         return ip;
+    }
+    public String getAddress(){
+        return address;
+    }
+
+    public void addNewMember(String groupName, String ipAddress){
+        groupAddressMap.get(groupName).add(ipAddress);
     }
 
 
