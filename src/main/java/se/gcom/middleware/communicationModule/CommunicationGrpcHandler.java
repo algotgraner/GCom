@@ -17,11 +17,6 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
             case CHATMESSAGE:
                 ChatMessage chatMessage = msg.getChatMessage();
                 manager.receiveMessage(chatMessage);
-
-                System.out.println("Received: " + chatMessage.getPayload());
-                System.out.println(chatMessage.getSenderId());
-                System.out.println(chatMessage.getReceiverId());
-                System.out.println(chatMessage.getMessageId());
                 break;
 
             case GROUPMEMBERSHIP:
