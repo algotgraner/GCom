@@ -20,6 +20,7 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
                             .withDescription(e.getMessage())
                             .asRuntimeException()
             );
+            return;
         }
         if(addresses == null){
             addresses = new ArrayList<>();
