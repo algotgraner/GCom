@@ -17,13 +17,14 @@ public class CommunicationService {
         this.handler = new CommunicationGrpcHandler(manager);
     }
 
-    public void start(int port) {
+    public int start() {
         try {
-            server = ServerBuilder.forPort(port)
+            server = ServerBuilder.forPort(0)
                     .addService(handler)
                     .build()
                     .start();
-            System.out.println("CommunicationService listening on port " + port);
+            System.out.println("CommunicationService listening on port " + server.getPort());
+            return server.getPort();
         } catch (Exception e) {
             throw new RuntimeException("Failed to start server", e);
         }

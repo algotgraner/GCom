@@ -25,10 +25,10 @@ public class Manager {
         this.debugController = debugController;
     }
 
-    public void start(int port){
-        this.groupManagement = new GroupManagement(port);
+    public void start(){
         communicationService = new CommunicationService(this);
-        startServer(port);
+        int port = startServer();
+        this.groupManagement = new GroupManagement(port);
     }
 
     public void sendMessage(String groupName, String message){
@@ -66,10 +66,11 @@ public class Manager {
         System.out.println("ipAddress: " + ipAddress);
         System.out.println("name: " + name);
         System.out.println("port: " + port);
+        groupManagement.createNewGroup(groupName, new ArrayList<>());
     }
 
-    private void startServer(int port) {
-        communicationService.start(port);
+    private int startServer() {
+         return communicationService.start();
     }
 
     public void joinGroup(String name) {
@@ -84,4 +85,5 @@ public class Manager {
         Message m = Message.newBuilder().setGroupMembership(g).build();
         communicationService.multicast(m, addresses);
     }
+
 }
