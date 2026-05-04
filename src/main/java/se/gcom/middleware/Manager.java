@@ -1,13 +1,11 @@
 package se.gcom.middleware;
 
+import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.middleware.communicationModule.ChatMessage;
-import se.gcom.middleware.communicationModule.CommunicationGrpcHandler;
-import se.gcom.middleware.communicationModule.CommunicationGrpcSender;
+import se.gcom.middleware.communicationModule.CommunicationService;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 
 import java.util.List;
 
@@ -17,10 +15,7 @@ public class Manager {
     DebugController debugController;
 
     GroupManagement groupManagement;
-    CommunicationGrpcSender communicationGrpcSender;
-    CommunicationGrpcHandler communicationGrpcHandler;
-
-    private Server server;
+    CommunicationService communicationService;
 
     public Manager(ChatController chatController, DebugController debugController) {
         this.chatController = chatController;
@@ -29,9 +24,7 @@ public class Manager {
 
     public void start(int port){
         this.groupManagement = new GroupManagement(port);
-        this.communicationGrpcSender = new CommunicationGrpcSender();
-        this.communicationGrpcHandler = new CommunicationGrpcHandler(this);
-
+        communicationService = new CommunicationService(this);
         startServer(port);
     }
 
@@ -44,8 +37,7 @@ public class Manager {
                         .setReceiverId("Test")
                         .setPayload(message)
                         .build();
-        communicationGrpcSender.multicast(msg, addresses);
-        System.out.println("Sent message: " + message + " to: " + groupName);
+        communicationService.multicast(msg, addresses);
     }
 
     public void receiveMessage(ChatMessage msg){
@@ -68,15 +60,7 @@ public class Manager {
     }
 
     private void startServer(int port) {
-        try {
-            server = ServerBuilder.forPort(port)
-                    .addService(communicationGrpcHandler)
-                    .build()
-                    .start();
-            System.out.println("Listening on port: " + port);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        communicationService.start(port);
     }
 
     public void joinGroup(String name) {
