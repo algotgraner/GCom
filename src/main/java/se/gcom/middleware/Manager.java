@@ -27,21 +27,21 @@ public class Manager {
         this.debugController = debugController;
     }
 
-    public void start(){
+    public void start() {
         communicationService = new CommunicationService(this);
         int port = startServer();
         this.groupManagement = new GroupManagement(port);
     }
 
-    public void sendMessage(String groupName, String message){
+    public void sendMessage(String groupName, String message) {
         List<String> addresses = groupManagement.getAddresses(groupName);
         // Create the message
         ChatMessage msg = ChatMessage.newBuilder()
-                        .setMessageId("1")
-                        .setSenderId(groupManagement.getAddress())
-                        .setReceiverId("Test")
-                        .setPayload(message)
-                        .build();
+                .setMessageId("1")
+                .setSenderId(groupManagement.getAddress())
+                .setReceiverId("Test")
+                .setPayload(message)
+                .build();
 
         Message m = Message.newBuilder().setChatMessage(msg).build();
 
@@ -50,12 +50,13 @@ public class Manager {
         communicationService.multicast(m, addresses);
     }
 
-    public void receiveMessage(ChatMessage msg){
+    public void receiveMessage(ChatMessage msg) {
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
         chatController.receiveMessage(msg.getSenderId(), msg.getPayload(), outgoing);
     }
-    public void receiveMessage(GroupMembership msg){
-        if(msg.getJoining()){
+
+    public void receiveMessage(GroupMembership msg) {
+        if (msg.getJoining()) {
             groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
         } else {
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
@@ -75,24 +76,20 @@ public class Manager {
     }
 
     private int startServer() {
-         return communicationService.start();
+        return communicationService.start();
     }
 
-    public void joinGroup(String name) {
-        try {
+    public void joinGroup(String name) throws StatusRuntimeException {
 
-            ArrayList<String> addresses = groupManagement.joinGroup(name);
-            GroupMembership g = GroupMembership.newBuilder()
-                    .setGroupId(name)
-                    .setSenderId(groupManagement.getAddress())
-                    .setJoining(true)
-                    .setMessageId("1")
-                    .build();
-            Message m = Message.newBuilder().setGroupMembership(g).build();
-            communicationService.multicast(m, addresses);
-        }catch (StatusRuntimeException e){
-
-        }
+        ArrayList<String> addresses = groupManagement.joinGroup(name);
+        GroupMembership g = GroupMembership.newBuilder()
+                .setGroupId(name)
+                .setSenderId(groupManagement.getAddress())
+                .setJoining(true)
+                .setMessageId("1")
+                .build();
+        Message m = Message.newBuilder().setGroupMembership(g).build();
+        communicationService.multicast(m, addresses);
     }
 
     public void leaveGroup(ChatGroup group) {
