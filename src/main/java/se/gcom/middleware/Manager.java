@@ -45,7 +45,7 @@ public class Manager {
 
         Message m = Message.newBuilder().setChatMessage(msg).build();
 
-        System.out.println(addresses);
+        System.out.println("Sent to:" + addresses);
 
         communicationService.multicast(m, addresses);
     }
@@ -55,7 +55,11 @@ public class Manager {
         chatController.receiveMessage(msg.getSenderId(), msg.getPayload(), outgoing);
     }
     public void receiveMessage(GroupMembership msg){
-        groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+        if(msg.getJoining()){
+            groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+        } else {
+            groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
+        }
     }
 
     public void addUserToGroup(String groupName, String ipAddress, String name, int port) {
@@ -67,10 +71,6 @@ public class Manager {
     }
 
     public void addGroup(String groupName, String ipAddress, String name, int port) {
-        System.out.println("groupName: " + groupName);
-        System.out.println("ipAddress: " + ipAddress);
-        System.out.println("name: " + name);
-        System.out.println("port: " + port);
         groupManagement.createNewGroup(groupName, new ArrayList<>());
     }
 
@@ -79,7 +79,6 @@ public class Manager {
     }
 
     public void joinGroup(String name) {
-        System.out.println("Join groupName: " + name);
         try {
 
             ArrayList<String> addresses = groupManagement.joinGroup(name);
@@ -97,6 +96,16 @@ public class Manager {
     }
 
     public void leaveGroup(ChatGroup group) {
-        System.out.println("Leaving group: " + group.getName());
+        groupManagement.leaveGroup(group.getId());
+        GroupMembership g = GroupMembership.newBuilder()
+                .setGroupId(group.getId())
+                .setSenderId(groupManagement.getAddress())
+                .setJoining(false)
+                .setMessageId("1")
+                .build();
+        Message m = Message.newBuilder().setGroupMembership(g).build();
+        ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(group.getName()));
+        addresses.remove(groupManagement.getAddress());
+        communicationService.multicast(m, addresses);
     }
 }
