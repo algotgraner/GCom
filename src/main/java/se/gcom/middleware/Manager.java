@@ -79,4 +79,7 @@ public class Manager {
         }
     }
 
+    public void joinGroup(String name) {
+        System.out.println("Join groupName: " + name);
+    }
 }

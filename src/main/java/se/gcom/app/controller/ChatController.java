@@ -111,4 +111,36 @@ public class ChatController {
         }
         return false;
     }
+
+    public ChatGroup joinGroup(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+
+        String trimmedName = name.trim();
+        ChatGroup existingGroup = findGroup(trimmedName);
+        if (existingGroup != null) {
+            selectedGroup = existingGroup;
+            return existingGroup;
+        }
+
+        ChatGroup group = new ChatGroup(trimmedName, trimmedName);
+        groups.add(group);
+        selectedGroup = group;
+
+        if (manager != null) {
+            manager.joinGroup(trimmedName);
+        }
+
+        return group;
+    }
+
+    private ChatGroup findGroup(String name) {
+        for (ChatGroup group : groups) {
+            if (group.getId().equals(name) || group.getName().equals(name)) {
+                return group;
+            }
+        }
+        return null;
+    }
 }
