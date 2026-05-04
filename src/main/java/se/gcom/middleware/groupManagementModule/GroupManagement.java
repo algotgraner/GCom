@@ -1,5 +1,6 @@
 package se.gcom.middleware.groupManagementModule;
 
+import io.grpc.StatusRuntimeException;
 import se.gcom.middleware.communicationModule.GroupMembership;
 
 import java.net.DatagramSocket;
@@ -22,8 +23,6 @@ public class GroupManagement {
         String ip = getIpAddress();
         address = ip + ":" + port;
         namingServerIsUp = namingServerCommunication.isUp();
-        groupAddressMap.put("Group1", new ArrayList<>(List.of("172.20.10.2:5001")));
-
     }
 
     public boolean isNamingServerIsUp() {
@@ -45,9 +44,11 @@ public class GroupManagement {
         }
     }
 
-    public ArrayList<String> joinGroup(String groupName){
+    public ArrayList<String> joinGroup(String groupName) throws StatusRuntimeException {
         ArrayList<String> addresses = namingServerCommunication.getAddresses(groupName);
-        groupAddressMap.put(groupName, addresses);
+        ArrayList<String> a = new ArrayList<>(addresses);
+        a.add(this.address);
+        groupAddressMap.put(groupName, a);
         namingServerCommunication.addToGroup(groupName, this.address);
         return addresses;
     }

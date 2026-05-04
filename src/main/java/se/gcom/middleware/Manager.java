@@ -1,5 +1,6 @@
 package se.gcom.middleware;
 
+import io.grpc.StatusRuntimeException;
 import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
@@ -36,18 +37,21 @@ public class Manager {
         // Create the message
         ChatMessage msg = ChatMessage.newBuilder()
                         .setMessageId("1")
-                        .setSenderId("Jonis")
+                        .setSenderId(groupManagement.getAddress())
                         .setReceiverId("Test")
                         .setPayload(message)
                         .build();
 
         Message m = Message.newBuilder().setChatMessage(msg).build();
 
+        System.out.println(addresses);
+
         communicationService.multicast(m, addresses);
     }
 
     public void receiveMessage(ChatMessage msg){
-        chatController.receiveMessage(msg.getSenderId(), msg.getPayload());
+        boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
+        chatController.receiveMessage(msg.getSenderId(), msg.getPayload(), outgoing);
     }
     public void receiveMessage(GroupMembership msg){
         groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
@@ -75,15 +79,20 @@ public class Manager {
 
     public void joinGroup(String name) {
         System.out.println("Join groupName: " + name);
-        ArrayList<String> addresses = groupManagement.joinGroup(name);
-        GroupMembership g = GroupMembership.newBuilder()
-                .setGroupId(name)
-                .setSenderId(groupManagement.getAddress())
-                .setJoining(true)
-                .setMessageId("1")
-                .build();
-        Message m = Message.newBuilder().setGroupMembership(g).build();
-        communicationService.multicast(m, addresses);
+        try {
+
+            ArrayList<String> addresses = groupManagement.joinGroup(name);
+            GroupMembership g = GroupMembership.newBuilder()
+                    .setGroupId(name)
+                    .setSenderId(groupManagement.getAddress())
+                    .setJoining(true)
+                    .setMessageId("1")
+                    .build();
+            Message m = Message.newBuilder().setGroupMembership(g).build();
+            communicationService.multicast(m, addresses);
+        }catch (StatusRuntimeException e){
+
+        }
     }
 
 }

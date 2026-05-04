@@ -62,8 +62,6 @@ public class ChatController {
             return;
         }
 
-        selectedGroup.getMessages().add(new ChatMessage("Me", text, true));
-
         if (manager != null) {
             manager.sendMessage(selectedGroup.getId(), text);
         }
@@ -77,16 +75,14 @@ public class ChatController {
         manager.addUserToGroup(selectedGroup.getId(), ipAddress, name, port);
     }
 
-    public void receiveMessage(String sender, String text) {
+    public void receiveMessage(String sender, String text, boolean outgoing) {
         ChatGroup targetGroup = selectedGroup != null ? selectedGroup : groups.get(0);
+        System.out.println("Outgoing: " + outgoing);
         Platform.runLater(() ->
-                targetGroup.getMessages().add(new ChatMessage(sender, text, false))
+                targetGroup.getMessages().add(new ChatMessage(sender, text, outgoing))
         );
     }
 
-    public void addDemo(){
-        receiveMessage("Group 1", "Hej");
-    }
 
     private String createGroupId(String name) {
         String baseId = name.replaceAll("\\s+", "");
