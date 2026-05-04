@@ -139,4 +139,10 @@ public class ChatController {
         }
         return null;
     }
+
+    public void leaveGroup() {
+        ChatGroup group = selectedGroup;
+        manager.leaveGroup(group);
+        groups.remove(group);
+    }
 }

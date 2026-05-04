@@ -4,6 +4,7 @@ import io.grpc.StatusRuntimeException;
 import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
+import se.gcom.app.model.ChatGroup;
 import se.gcom.middleware.communicationModule.ChatMessage;
 import se.gcom.middleware.communicationModule.CommunicationService;
 import se.gcom.middleware.communicationModule.GroupMembership;
@@ -95,4 +96,7 @@ public class Manager {
         }
     }
 
+    public void leaveGroup(ChatGroup group) {
+        System.out.println("Leaving group: " + group.getName());
+    }
 }
