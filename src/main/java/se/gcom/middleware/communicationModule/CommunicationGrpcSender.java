@@ -1,41 +1,72 @@
 package se.gcom.middleware.communicationModule;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
+import se.gcom.middleware.Manager;
 
 public class CommunicationGrpcSender {
     //this class will be used to make grpc calls to send messages to other nodes
+    private final ConcurrentHashMap<String, ManagedChannel> channelMap = new ConcurrentHashMap<>();
+
+    private final Manager manager;
+    public CommunicationGrpcSender(Manager manager) {
+        this.manager = manager;
+    }
 
     public void multicast(Message msg, List<String> addresses){
         for (String address : addresses) {
-            String[] parts = address.split(":");
-            String host = parts[0];
-            int port = Integer.parseInt(parts[1]);
-
-            sendToNode(host, port, msg);
+            sendToNode(address, msg);
 
         }
     }
 
-    private void sendToNode(String host, int port, Message msg){
+    private void sendToNode(String address, Message msg){
+        ManagedChannel channel = getChannel(address);
         try {
-            ManagedChannel channel = ManagedChannelBuilder
-                    .forAddress(host, port)
-                    .usePlaintext()
-                    .build();
-
             CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
-                    CommunicationServiceGrpc.newBlockingStub(channel);
+                    CommunicationServiceGrpc.newBlockingStub(channel).withDeadlineAfter(5, TimeUnit.SECONDS);
 
             // send the message to the node
             Ack ack = stub.sendMessage(msg);
             System.out.println("ACK status: " + ack);
 
-            channel.shutdown();
+        } catch (StatusRuntimeException e){
+            System.err.println("GRPC runtime exception, Removing the address, (SHOULD CALL MANAGER HERE AND REPORT FAILURE):" + e.getMessage());
+            removeChannel(address);
         } catch (Exception e) {
-            System.err.println("Could not reach node at port " + port + ": " + e.getMessage());
+            System.err.println("Could not reach node: " + e.getMessage());
+            removeChannel(address);
         }
+    }
+
+    private ManagedChannel getChannel(String address){
+        return channelMap.computeIfAbsent(address, addr -> {
+            String[] parts = addr.split(":");
+            String host = parts[0];
+            int port = Integer.parseInt(parts[1]);
+            return ManagedChannelBuilder.forAddress(host, port).usePlaintext().keepAliveWithoutCalls(true).build();
+        });
+    }
+
+    private void removeChannel(String address){
+        ManagedChannel channel = channelMap.remove(address);
+        if (channel != null){
+            channel.shutdown();
+            System.out.println("Removed channel for address:" + address);
+        }
+
+    }
+
+    // This function should be called on shutdown
+    public void shutdown(){
+        System.out.println("Shutting down all channels...");
+        channelMap.forEach((addr, ch) -> ch.shutdownNow());
+        channelMap.clear();
     }
 
 }

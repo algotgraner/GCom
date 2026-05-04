@@ -13,7 +13,7 @@ public class CommunicationService {
 
     public CommunicationService(Manager manager) {
         this.manager = manager;
-        this.sender = new CommunicationGrpcSender();
+        this.sender = new CommunicationGrpcSender(manager);
         this.handler = new CommunicationGrpcHandler(manager);
     }
 
@@ -32,6 +32,8 @@ public class CommunicationService {
 
     public void stop() {
         if (server != null) {
+            // shut down the open channels
+            sender.shutdown();
             server.shutdown();
         }
     }
