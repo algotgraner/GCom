@@ -30,6 +30,7 @@ public class ChatView {
     private final Button joinGroupButton = new Button("Join");
     private final Label selectedGroupTitle = new Label();
     private final Button addUserButton = new Button("Add User");
+    private final Button leaveGroupButton = new Button("Leave group");
     private ObservableList<ChatMessage> visibleMessages;
     private final ListChangeListener<ChatMessage> messageListener = change -> renderMessages();
 
@@ -52,11 +53,12 @@ public class ChatView {
     private VBox createRightPane() {
         selectedGroupTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
         addUserButton.setOnAction(e -> openAddUserDialog());
+        leaveGroupButton.setOnAction(e -> leaveGroupAction());
 
         Region headerSpacer = new Region();
         HBox.setHgrow(headerSpacer, Priority.ALWAYS);
 
-        HBox chatHeader = new HBox(10, selectedGroupTitle, headerSpacer, addUserButton);
+        HBox chatHeader = new HBox(10, selectedGroupTitle, headerSpacer,leaveGroupButton , addUserButton);
         chatHeader.setAlignment(Pos.CENTER_LEFT);
         chatHeader.setPadding(new Insets(0, 25, 0, 10));
 
@@ -84,6 +86,10 @@ public class ChatView {
 
         return rightPane;
 
+    }
+
+    private void leaveGroupAction() {
+        chatController.leaveGroup();
     }
 
     private VBox createLeftPane() {
