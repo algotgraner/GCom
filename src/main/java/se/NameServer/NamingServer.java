@@ -30,6 +30,9 @@ public class NamingServer {
             throw new GroupDoesNotExistException(groupName);
         }
         groupAddressMap.get(groupName).remove(address);
+        if (groupAddressMap.get(groupName).isEmpty()){
+            groupAddressMap.remove(groupName);
+        }
     }
 
     public ArrayList<String> getGroups(String address){
