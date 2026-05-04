@@ -35,7 +35,7 @@ public class CommunicationService {
         }
     }
 
-    public void multicast(ChatMessage msg, List<String> addresses) {
+    public void multicast(Message msg, List<String> addresses) {
         sender.multicast(msg, addresses);
     }
 }

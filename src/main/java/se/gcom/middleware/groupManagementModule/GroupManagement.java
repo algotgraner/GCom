@@ -73,6 +73,13 @@ public class GroupManagement {
         }
         return ip;
     }
+    public String getAddress(){
+        return address;
+    }
+
+    public void addNewMember(String groupName, String ipAddress){
+        groupAddressMap.get(groupName).add(ipAddress);
+    }
 
 
     public void shutdown(){

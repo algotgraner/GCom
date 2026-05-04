@@ -5,8 +5,11 @@ import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.middleware.communicationModule.ChatMessage;
 import se.gcom.middleware.communicationModule.CommunicationService;
+import se.gcom.middleware.communicationModule.GroupMembership;
+import se.gcom.middleware.communicationModule.Message;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Manager {
@@ -37,11 +40,17 @@ public class Manager {
                         .setReceiverId("Test")
                         .setPayload(message)
                         .build();
-        communicationService.multicast(msg, addresses);
+
+        Message m = Message.newBuilder().setChatMessage(msg).build();
+
+        communicationService.multicast(m, addresses);
     }
 
     public void receiveMessage(ChatMessage msg){
         chatController.receiveMessage(msg.getSenderId(), msg.getPayload());
+    }
+    public void receiveMessage(GroupMembership msg){
+        groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
     }
 
     public void addUserToGroup(String groupName, String ipAddress, String name, int port) {
@@ -65,5 +74,14 @@ public class Manager {
 
     public void joinGroup(String name) {
         System.out.println("Join groupName: " + name);
+        ArrayList<String> addresses = groupManagement.joinGroup(name);
+        GroupMembership g = GroupMembership.newBuilder()
+                .setGroupId(name)
+                .setSenderId(groupManagement.getAddress())
+                .setJoining(true)
+                .setMessageId("1")
+                .build();
+        Message m = Message.newBuilder().setGroupMembership(g).build();
+        communicationService.multicast(m, addresses);
     }
 }
