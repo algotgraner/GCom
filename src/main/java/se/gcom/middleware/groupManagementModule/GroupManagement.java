@@ -60,7 +60,7 @@ public class GroupManagement {
         if (namingServerIsUp){
             namingServerCommunication.removeFromGroup(groupName, this.address);
         }
-        groupAddressMap.get(groupName).remove(this.address);
+        groupAddressMap.remove(groupName);
     }
 
     private String getIpAddress(){
@@ -80,6 +80,9 @@ public class GroupManagement {
 
     public void addNewMember(String groupName, String ipAddress){
         groupAddressMap.get(groupName).add(ipAddress);
+    }
+    public void removeMember(String groupName, String ipAddress){
+        groupAddressMap.get(groupName).remove(ipAddress);
     }
 
 
