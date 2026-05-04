@@ -44,18 +44,16 @@ public class NamingServerCommunication {
         }
     }
 
-    public ArrayList<String> getAddresses(String groupName){
+    public ArrayList<String> getAddresses(String groupName) throws StatusRuntimeException{
         List<String> addresses = new ArrayList<>();
-        try {
-            AddressList response = stub.getAddresses(
-                    GroupRequest.newBuilder()
-                            .setGroupName(groupName)
-                            .build()
-            );
-            addresses = response.getAddressesList();
-        } catch (StatusRuntimeException e){
-            return null;
-        }
+
+        AddressList response = stub.getAddresses(
+                GroupRequest.newBuilder()
+                        .setGroupName(groupName)
+                        .build()
+        );
+        addresses = response.getAddressesList();
+
         return new ArrayList<>(addresses);
     }
 
