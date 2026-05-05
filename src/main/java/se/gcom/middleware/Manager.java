@@ -115,7 +115,7 @@ public class Manager {
         Message m = Message.newBuilder().setGroupMembership(g).build();
         // Send join request
         System.out.println("Sending join request to first in member list: " + addresses.getFirst());
-        Ack ack = communicationService.sendJoinRequest(m, addresses.getFirst());
+        Ack ack = communicationService.multicast(m, addresses);
 
         if (ack.getSuccess() && ack.hasMembership()){
             MembershipAck membershipAck = ack.getMembership();

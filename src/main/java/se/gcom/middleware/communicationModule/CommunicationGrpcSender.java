@@ -18,14 +18,16 @@ public class CommunicationGrpcSender {
         this.manager = manager;
     }
 
-    public void multicast(Message msg, List<String> addresses){
+    public Ack multicast(Message msg, List<String> addresses){
+        Ack latestAck = null;
         for (String address : addresses) {
-            sendToNode(address, msg);
+            latestAck = sendToNode(address, msg);
 
         }
+        return latestAck;
     }
 
-    private void sendToNode(String address, Message msg){
+    private Ack sendToNode(String address, Message msg){
         ManagedChannel channel = getChannel(address);
         try {
             CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
@@ -34,13 +36,23 @@ public class CommunicationGrpcSender {
             // send the message to the node
             Ack ack = stub.sendMessage(msg);
             System.out.println("ACK status: " + ack);
+            return ack;
 
         } catch (StatusRuntimeException e){
             System.err.println("GRPC runtime exception, Removing the address, (SHOULD CALL MANAGER HERE AND REPORT FAILURE):" + e.getMessage());
             removeChannel(address);
+            return Ack.newBuilder()
+                    .setSuccess(false)
+                    .setErrorMessage("gRPC error: " + e.getStatus().getCode() + " - " + e.getMessage())
+                    .build();
+
         } catch (Exception e) {
             System.err.println("Could not reach node: " + e.getMessage());
             removeChannel(address);
+            return Ack.newBuilder()
+                    .setSuccess(false)
+                    .setErrorMessage("gRPC error: " + e.getMessage() + " - " + e.getMessage())
+                    .build();
         }
     }
 
