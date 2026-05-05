@@ -90,7 +90,7 @@ public class Manager {
     public void addGroup(String groupName, String ipAddress, String name, int port) {
         groupManagement.createNewGroup(groupName, new ArrayList<>());
         // ordering type needs to be dynamic here
-        orderingModule.setUpGroup(groupName, OrderingModule.OrderingType.CAUSAL);
+        //orderingModule.setUpGroup(groupName, OrderingModule.OrderingType.CAUSAL);
     }
 
     private int startServer() {
@@ -142,4 +142,7 @@ public class Manager {
         return orderingModule.orderingIsCausal(groupName);
     }
 
+    public void setGroupOrdering(String groupId, OrderingModule.OrderingType type) {
+        orderingModule.setUpGroup(groupId, type);
+    }
 }
