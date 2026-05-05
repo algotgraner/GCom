@@ -78,6 +78,7 @@ public class Manager {
     public void deliverIncomingMessage(GroupMembership msg) {
         if (msg.getJoining()) {
             groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+            orderingModule.addMemberToVectorClock(msg.getGroupId(), msg.getSenderId());
             System.out.println("Received join message");
         } else {
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
@@ -119,6 +120,13 @@ public class Manager {
         if (ack.getSuccess() && ack.hasMembership()){
             MembershipAck membershipAck = ack.getMembership();
             System.out.println("Got membership ack with VC: " + membershipAck.getVectorClockMap());
+            OrderingModule.OrderingType groupType;
+            if (membershipAck.getIsCausal()){
+                groupType = OrderingModule.OrderingType.CAUSAL;
+            } else {
+                groupType = OrderingModule.OrderingType.UNORDERED;
+            }
+            orderingModule.setUpGroup(name, groupType);
             // join the group with the vector clock we
             orderingModule.joinGroup(name, membershipAck.getVectorClockMap());
         }
