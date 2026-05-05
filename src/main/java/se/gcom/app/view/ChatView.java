@@ -243,11 +243,15 @@ public class ChatView {
         TextField groupNameField = new TextField();
         groupNameField.setPromptText("Group name");
 
+        TextField ipField = new TextField();
+        ipField.setPromptText("IP address");
+
         GridPane content = new GridPane();
         content.setHgap(10);
         content.setVgap(10);
         content.setPadding(new Insets(8, 0, 0, 0));
         content.addRow(0, new Label("Group name"), groupNameField);
+        content.addRow(1, new Label("IP address"), ipField);
         dialog.getDialogPane().setContent(content);
 
         dialog.setResultConverter(button -> {
@@ -255,16 +259,23 @@ public class ChatView {
                 return null;
             }
 
-            return groupNameField.getText().trim();
+            return groupNameField.getText().trim() + ";" + ipField.getText().trim();
 
         });
 
         dialog.setOnShown(e -> groupNameField.requestFocus());
-        dialog.showAndWait().ifPresent(this::joinGroup);
+        dialog.showAndWait().ifPresent(result -> {
+            String[] parts = result.split(";");
+            if (parts.length != 2) {
+                joinGroup(parts[0], null);
+            } else {
+                joinGroup(parts[0], parts[1]);
+            }
+        });
     }
 
-    private void joinGroup(String name){
-        ChatGroup group = chatController.joinGroup(name);
+    private void joinGroup(String name, String ip){
+        ChatGroup group = chatController.joinGroup(name, ip);
         if (group != null) {
             groups.getSelectionModel().select(group);
         }
