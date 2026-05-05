@@ -5,15 +5,13 @@ import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.app.model.ChatGroup;
-import se.gcom.middleware.communicationModule.ChatMessage;
-import se.gcom.middleware.communicationModule.CommunicationService;
-import se.gcom.middleware.communicationModule.GroupMembership;
-import se.gcom.middleware.communicationModule.Message;
+import se.gcom.middleware.communicationModule.*;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
 import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Manager {
 
@@ -91,6 +89,8 @@ public class Manager {
 
     public void addGroup(String groupName, String ipAddress, String name, int port) {
         groupManagement.createNewGroup(groupName, new ArrayList<>());
+        // ordering type needs to be dynamic here
+        orderingModule.setUpGroup(groupName, OrderingModule.OrderingType.CAUSAL);
     }
 
     private int startServer() {
@@ -107,7 +107,16 @@ public class Manager {
                 .setMessageId("1")
                 .build();
         Message m = Message.newBuilder().setGroupMembership(g).build();
-        communicationService.multicast(m, addresses);
+        // Send join request
+        System.out.println("Sending join request to first in member list: " + addresses.getFirst());
+        Ack ack = communicationService.sendJoinRequest(m, addresses.getFirst());
+
+        if (ack.getSuccess() && ack.hasMembership()){
+            MembershipAck membershipAck = ack.getMembership();
+            System.out.println("Got membership ack with VC: " + membershipAck.getVectorClockMap());
+            // join the group with the vector clock we
+            orderingModule.joinGroup(name, membershipAck.getVectorClockMap());
+        }
     }
 
     public void leaveGroup(ChatGroup group) {
@@ -123,6 +132,14 @@ public class Manager {
         addresses.remove(groupManagement.getAddress());
         System.out.println("Sending Leave to:" + addresses);
         communicationService.multicast(m, addresses);
+    }
+
+    public Map<String, Integer> getCurrentVectorClock(String groupName) {
+        return orderingModule.getVectorClock(groupName);
+    }
+
+    public Boolean orderingIsCausal(String groupName){
+        return orderingModule.orderingIsCausal(groupName);
     }
 
 }
