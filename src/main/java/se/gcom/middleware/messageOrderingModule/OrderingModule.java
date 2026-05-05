@@ -7,6 +7,7 @@ import se.gcom.middleware.communicationModule.Message;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class OrderingModule {
 
@@ -26,6 +27,7 @@ public class OrderingModule {
     }
 
     public void setUpGroup(String groupName, OrderingType type){
+        System.out.println("Created group: " + groupName + "with type: " + type);
         groupOrdering.put(groupName, type);
         if (type == OrderingType.CAUSAL) {
             // create vector clock
