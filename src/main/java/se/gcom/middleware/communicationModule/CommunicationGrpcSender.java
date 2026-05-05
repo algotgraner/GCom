@@ -62,6 +62,23 @@ public class CommunicationGrpcSender {
 
     }
 
+    public Ack sendJoinRequest(Message msg, String address) {
+        ManagedChannel channel = getChannel(address);
+        try {
+            CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
+                    CommunicationServiceGrpc.newBlockingStub(channel)
+                            .withDeadlineAfter(10, TimeUnit.SECONDS);
+
+            Ack ack = stub.sendMessage(msg);
+            return ack;
+
+        } catch (Exception e) {
+            System.err.println("Failed to get response from " + address + ": " + e.getMessage());
+            removeChannel(address);
+            return Ack.newBuilder().setSuccess(false).build();
+        }
+    }
+
     // This function should be called on shutdown
     public void shutdown(){
         System.out.println("Shutting down all channels...");
