@@ -38,8 +38,8 @@ public class GroupManagement {
     }
     public void createNewGroup(String groupName, ArrayList<String> addresses){
         groupAddressMap.put(groupName, addresses);
+        addresses.add(this.address);
         if(namingServerIsUp) {
-            addresses.add(this.address);
             namingServerCommunication.createNewGroup(groupName, addresses);
         }
     }
@@ -52,7 +52,10 @@ public class GroupManagement {
         namingServerCommunication.addToGroup(groupName, this.address);
         return addresses;
     }
-    public void joinGroup(String groupName, ArrayList<String> addresses){
+    public void joinGroup(String groupName, String ip){
+        ArrayList<String> addresses = new ArrayList<>();
+        addresses.add(ip);
+        addresses.add(this.address);
         groupAddressMap.put(groupName, addresses);
     }
 

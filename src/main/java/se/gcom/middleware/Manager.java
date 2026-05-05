@@ -104,9 +104,16 @@ public class Manager {
         return communicationService.start();
     }
 
-    public void joinGroup(String name) throws StatusRuntimeException {
+    public void joinGroup(String name, String ip) throws StatusRuntimeException {
         communicationService.addGroupToReliablePairing(name, true); //Should be replaced with actual information from ack
-        ArrayList<String> addresses = groupManagement.joinGroup(name);
+        ArrayList<String> addresses;
+        if (groupManagement.isNamingServerIsUp()){
+            addresses = groupManagement.joinGroup(name);
+        } else {
+            groupManagement.joinGroup(name, ip);
+            addresses = new ArrayList<>();
+            addresses.add(ip);
+        }
         GroupMembership g = GroupMembership.newBuilder()
                 .setGroupId(name)
                 .setSenderId(groupManagement.getAddress())
