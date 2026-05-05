@@ -62,8 +62,14 @@ public class Manager {
         communicationService.multicast(m, addresses);
     }
 
-    public void handleIncomingMessage(ChatMessage msg){
+    public void handleIncomingMessage(ChatMessage msg, boolean reliable){
         orderingModule.handleIncomingMessage(msg);
+        if (reliable) {
+            Message m = Message.newBuilder().setChatMessage(msg).build();
+            List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
+            addresses.remove(msg.getSenderId());
+            communicationService.multicast(m, addresses);
+        }
     }
 
     public void deliverIncomingMessage(ChatMessage msg){
@@ -89,8 +95,9 @@ public class Manager {
 
     }
 
-    public void addGroup(String groupName, String ipAddress, String name, int port) {
+    public void addGroup(String groupName, boolean reliable) {
         groupManagement.createNewGroup(groupName, new ArrayList<>());
+        communicationService.addGroupToReliablePairing(groupName, reliable);
     }
 
     private int startServer() {
@@ -98,7 +105,7 @@ public class Manager {
     }
 
     public void joinGroup(String name) throws StatusRuntimeException {
-
+        communicationService.addGroupToReliablePairing(name, true); //Should be replaced with actual information from ack
         ArrayList<String> addresses = groupManagement.joinGroup(name);
         GroupMembership g = GroupMembership.newBuilder()
                 .setGroupId(name)
