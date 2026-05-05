@@ -25,7 +25,7 @@ public class GroupManagement {
         namingServerIsUp = namingServerCommunication.isUp();
     }
 
-    public boolean isNamingServerIsUp() {
+    public boolean NamingServerIsUp() {
         return namingServerIsUp;
     }
 
@@ -52,11 +52,8 @@ public class GroupManagement {
         namingServerCommunication.addToGroup(groupName, this.address);
         return addresses;
     }
-    public void joinGroup(String groupName, String ip){
-        ArrayList<String> addresses = new ArrayList<>();
-        addresses.add(ip);
-        addresses.add(this.address);
-        groupAddressMap.put(groupName, addresses);
+    public void joinGroup(String groupName, ArrayList<String> addresses){
+        groupAddressMap.put(groupName, new ArrayList<>(addresses));
     }
 
     public void leaveGroup(String groupName){
