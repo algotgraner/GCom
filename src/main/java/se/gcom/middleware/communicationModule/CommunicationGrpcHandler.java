@@ -3,11 +3,16 @@ package se.gcom.middleware.communicationModule;
 import io.grpc.stub.StreamObserver;
 import se.gcom.middleware.Manager;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class CommunicationGrpcHandler extends CommunicationServiceGrpc.CommunicationServiceImplBase {
 
     private final Manager manager;
+    private final Set<String> seenMessages;
     public CommunicationGrpcHandler(Manager manager) {
         this.manager = manager;
+        seenMessages = new HashSet<>();
     }
 
     @Override
@@ -16,8 +21,11 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
         switch (msg.getContentCase()){
             case CHATMESSAGE:
                 ChatMessage chatMessage = msg.getChatMessage();
-                // incomingMessage uses the OrderingModule
-                manager.handleIncomingMessage(chatMessage);
+                if(!seenMessages.contains(chatMessage.getMessageId())){
+                    // incomingMessage uses the OrderingModule
+                    seenMessages.add(chatMessage.getMessageId());
+                    manager.handleIncomingMessage(chatMessage);
+                }
 
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());

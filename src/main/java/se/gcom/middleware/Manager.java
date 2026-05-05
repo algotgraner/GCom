@@ -64,6 +64,10 @@ public class Manager {
 
     public void handleIncomingMessage(ChatMessage msg){
         orderingModule.handleIncomingMessage(msg);
+        Message m = Message.newBuilder().setChatMessage(msg).build();
+        List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
+        addresses.remove(msg.getSenderId());
+        communicationService.multicast(m, addresses);
     }
 
     public void deliverIncomingMessage(ChatMessage msg){
