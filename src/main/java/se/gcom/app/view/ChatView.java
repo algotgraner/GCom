@@ -251,7 +251,11 @@ public class ChatView {
         dialog.setOnShown(e -> groupNameField.requestFocus());
         dialog.showAndWait().ifPresent(result -> {
             String[] parts = result.split(";");
-            joinGroup(parts[0], parts[1]);
+            if (parts.length != 2) {
+                joinGroup(parts[0], null);
+            } else {
+                joinGroup(parts[0], parts[1]);
+            }
         });
     }
 
