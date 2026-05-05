@@ -38,6 +38,10 @@ public class CommunicationService {
         }
     }
 
+    public void addGroupToReliablePairing(String group, boolean reliable){
+        handler.addGroupToReliablePairing(group, reliable);
+    }
+
     public void multicast(Message msg, List<String> addresses) {
         sender.multicast(msg, addresses);
     }

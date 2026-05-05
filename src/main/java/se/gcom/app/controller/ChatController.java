@@ -41,7 +41,7 @@ public class ChatController {
         }
     }
 
-    public ChatGroup createGroup(String name, String ipAddress, String username, int port, boolean causalOrdering) {
+    public ChatGroup createGroup(String name, boolean causalOrdering, boolean reliable) {
         if (name == null || name.isBlank()) {
             return null;
         }
@@ -52,7 +52,7 @@ public class ChatController {
         selectedGroup = group;
 
         if (manager != null) {
-            manager.addGroup(trimmedName, ipAddress, username, port);
+            manager.addGroup(trimmedName, reliable);
         }
 
         return group;

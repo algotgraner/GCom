@@ -273,10 +273,8 @@ public class ChatView {
     private void createGroup(GroupInput groupInput) {
         ChatGroup group = chatController.createGroup(
                 groupInput.groupName(),
-                groupInput.ipAddress(),
-                groupInput.username(),
-                groupInput.port(),
-                groupInput.causalOrdering()
+                groupInput.causalOrdering(),
+                true
         );
         if (group != null) {
             groups.getSelectionModel().select(group);
