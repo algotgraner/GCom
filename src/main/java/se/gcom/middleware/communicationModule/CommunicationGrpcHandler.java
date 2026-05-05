@@ -3,6 +3,8 @@ package se.gcom.middleware.communicationModule;
 import io.grpc.stub.StreamObserver;
 import se.gcom.middleware.Manager;
 
+import java.util.Map;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -40,6 +42,24 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                 GroupMembership groupMembership = msg.getGroupMembership();
                 // here the message can be received right away
                 manager.deliverIncomingMessage(groupMembership);
+
+                if (groupMembership.getJoining()){
+                    if (manager.orderingIsCausal(groupMembership.getGroupId())){
+                        // the group is causally ordered so we need to append the vector clock to the ack
+                        Map<String, Integer> currentVC = manager.getCurrentVectorClock(groupMembership.getGroupId());
+                        // joining message, respond ack with vector clock
+                        MembershipAck membershipAck = MembershipAck.newBuilder().putAllVectorClock(currentVC).build();
+                        // pack into the ack
+                        Ack ack = Ack.newBuilder()
+                                .setSuccess(true)
+                                .setMembership(membershipAck)
+                                .build();
+
+                        responseObserver.onNext(ack);
+                        responseObserver.onCompleted();
+                        return;
+                    }
+                }
                 break;
         }
 

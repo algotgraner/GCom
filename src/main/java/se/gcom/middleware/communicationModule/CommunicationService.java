@@ -45,4 +45,8 @@ public class CommunicationService {
     public void multicast(Message msg, List<String> addresses) {
         sender.multicast(msg, addresses);
     }
+
+    public Ack sendJoinRequest(Message msg, String targetAddress) {
+        return sender.sendJoinRequest(msg, targetAddress);
+    }
 }

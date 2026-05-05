@@ -31,4 +31,17 @@ message GroupMembership{
 
 message Ack {
   bool success = 1;
+  string errorMessage = 2;
+  oneof details {
+    DataAck data = 3;
+    MembershipAck membership = 4;
+  }
 }
+
+message MembershipAck {
+  int32 viewId = 1;
+  repeated string members = 2;
+  map<string, int32> vectorClock = 3;
+}
+
+message DataAck { }

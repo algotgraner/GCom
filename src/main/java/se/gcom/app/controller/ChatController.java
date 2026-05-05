@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.app.model.ChatMessage;
 import se.gcom.middleware.Manager;
+import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
 public class ChatController {
 
@@ -40,7 +41,7 @@ public class ChatController {
         }
     }
 
-    public ChatGroup createGroup(String name, boolean reliable) {
+    public ChatGroup createGroup(String name, boolean causalOrdering, boolean reliable) {
         if (name == null || name.isBlank()) {
             return null;
         }
@@ -152,5 +153,15 @@ public class ChatController {
         ChatGroup group = selectedGroup;
         manager.leaveGroup(group);
         groups.remove(group);
+    }
+
+    public void setGroupOrdering(String groupId, boolean causal) {
+        if (manager != null) {
+            OrderingModule.OrderingType type = causal
+                    ? OrderingModule.OrderingType.CAUSAL
+                    : OrderingModule.OrderingType.UNORDERED;
+
+            manager.setGroupOrdering(groupId, type);
+        }
     }
 }

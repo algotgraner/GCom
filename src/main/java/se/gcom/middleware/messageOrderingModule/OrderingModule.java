@@ -7,6 +7,7 @@ import se.gcom.middleware.communicationModule.Message;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class OrderingModule {
 
@@ -14,7 +15,7 @@ public class OrderingModule {
     private String myAddress;
     private final ConcurrentHashMap<String, OrderingType> groupOrdering = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, VectorClock> vectorClockMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Queue<Message>> holdbackQueue = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Queue<ChatMessage>> holdbackQueue = new ConcurrentHashMap<>();
 
     public enum OrderingType {
         UNORDERED,
@@ -26,8 +27,32 @@ public class OrderingModule {
     }
 
     public void setUpGroup(String groupName, OrderingType type){
+        System.out.println("Created group: " + groupName + "with type: " + type);
         groupOrdering.put(groupName, type);
-        vectorClockMap.putIfAbsent(groupName, new VectorClock());
+        if (type == OrderingType.CAUSAL) {
+            // create vector clock
+            VectorClock vc = new VectorClock();
+            vc.increment(myAddress);
+            vectorClockMap.put(groupName, vc);
+            holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
+        }
+    }
+
+    public void joinGroup(String groupName, Map<String, Integer> groupVectorClock){
+        OrderingType type = groupOrdering.getOrDefault(groupName, OrderingType.UNORDERED);
+
+        if (type == OrderingType.CAUSAL) {
+            VectorClock vc = new VectorClock();
+            if (groupVectorClock != null && !groupVectorClock.isEmpty()) {
+                vc.updateFromMap(groupVectorClock);
+            }
+            vc.increment(myAddress);
+            vectorClockMap.put(groupName, vc);
+            holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
+            System.out.println("[Ordering] Joined CAUSAL group: " + groupName +" VC: " + vc);
+        } else {
+            System.out.println("[Ordering] Joined UNORDERED group: " + groupName );
+        }
     }
 
     public ChatMessage handleOutgoingMessage(ChatMessage msg, String groupName){
@@ -51,22 +76,63 @@ public class OrderingModule {
             type = OrderingType.UNORDERED;
         }
 
+        if (type == OrderingType.UNORDERED) {
+            manager.deliverIncomingMessage(msg);
+        } else {
+            handleCausalIncoming(msg);
+        }
+    }
 
-        switch (type){
-            case OrderingType.CAUSAL:
-                System.out.println("CAUSAL not implemented yet!");
-                break;
+    private void handleCausalIncoming(ChatMessage msg){
+        String groupId = msg.getGroupId();
+        VectorClock myVC = vectorClockMap.get(groupId);
+        Queue<ChatMessage> queue = holdbackQueue.get(groupId);
 
-            case OrderingType.UNORDERED:
+        if (myVC == null || queue == null) {
+            System.err.println("ERROR: myVC or holdback queue is null, we deliver WITHOUT checking tho");
+            manager.deliverIncomingMessage(msg);
+            return;
+        }
 
-                // just receive right away
-                manager.deliverIncomingMessage(msg);
-                break;
+        Map<String, Integer> incomingClock = msg.getVectorClockMap();
 
-            default:
-                System.err.println("Error default case reached");
-                break;
+        System.out.println("From: " + msg.getSenderId() + ", message ID: " + msg.getMessageId());
+        System.out.println("Current  VC (my clock): " + myVC);
+        System.out.println("Incoming VC: " + incomingClock);
+        System.out.println("Can deliver?: " + myVC.canDeliver(incomingClock, msg.getSenderId()));
+        System.out.println("Holdback queue size: " + queue.size());
 
+        if (myVC.canDeliver(incomingClock, msg.getSenderId())) {
+            // deliver immediately
+            manager.deliverIncomingMessage(msg);
+            // update oru clock
+            myVC.updateFromMap(incomingClock);
+
+            // check holdback queue for newly deliverable messages
+            //checkHoldbackQueue(groupId) needs to be implemented
+        } else {
+            // put at holdback queue
+            queue.add(msg);
+            System.out.println("Message " + msg.getMessageId() +" held back, current holdback size: " + queue.size());
+        }
+    }
+
+
+    public Map<String, Integer> getVectorClock(String groupName) {
+        VectorClock vc = vectorClockMap.get(groupName);
+        if (vc != null) {
+            return vc.attachClock();
+        }
+        System.out.println("No vector clock for group: " + groupName);
+        return new ConcurrentHashMap<>();
+    }
+
+    public Boolean orderingIsCausal(String groupName){
+        OrderingType type = groupOrdering.get(groupName);
+        if (type == OrderingType.CAUSAL) {
+            return true;
+        } else {
+            return false;
         }
     }
 
