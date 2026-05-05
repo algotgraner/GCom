@@ -69,8 +69,7 @@ public class CommunicationGrpcSender {
                     CommunicationServiceGrpc.newBlockingStub(channel)
                             .withDeadlineAfter(10, TimeUnit.SECONDS);
 
-            Ack ack = stub.sendMessage(msg);
-            return ack;
+            return stub.sendMessage(msg);
 
         } catch (Exception e) {
             System.err.println("Failed to get response from " + address + ": " + e.getMessage());
