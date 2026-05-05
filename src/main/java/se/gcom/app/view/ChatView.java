@@ -186,6 +186,18 @@ public class ChatView {
         TextField portField = new TextField();
         portField.setPromptText("Port");
 
+        ToggleGroup orderingGroup = new ToggleGroup();
+
+        RadioButton unorderedRadio = new RadioButton("Unordered");
+        RadioButton causalRadio = new RadioButton("Causal Ordering");
+        unorderedRadio.setToggleGroup(orderingGroup);
+        causalRadio.setToggleGroup(orderingGroup);
+        causalRadio.setSelected(true);                    // default to Causal (more interesting)
+
+        HBox orderingBox = new HBox(15, unorderedRadio, causalRadio);
+        orderingBox.setPadding(new Insets(5, 0, 5, 0));
+
+
         GridPane content = new GridPane();
         content.setHgap(10);
         content.setVgap(10);
@@ -194,6 +206,8 @@ public class ChatView {
         content.addRow(1, new Label("Username"), usernameField);
         content.addRow(2, new Label("IP address"), ipAddressField);
         content.addRow(3, new Label("Port"), portField);
+        content.addRow(4, new Label("Ordering Type"), orderingBox);
+
         dialog.getDialogPane().setContent(content);
 
         dialog.setResultConverter(button -> {
@@ -206,7 +220,8 @@ public class ChatView {
                         groupNameField.getText().trim(),
                         ipAddressField.getText().trim(),
                         usernameField.getText().trim(),
-                        Integer.parseInt(portField.getText().trim())
+                        Integer.parseInt(portField.getText().trim()),
+                        causalRadio.isSelected()
                 );
             } catch (NumberFormatException e) {
                 return null;
@@ -260,10 +275,12 @@ public class ChatView {
                 groupInput.groupName(),
                 groupInput.ipAddress(),
                 groupInput.username(),
-                groupInput.port()
+                groupInput.port(),
+                groupInput.causalOrdering()
         );
         if (group != null) {
             groups.getSelectionModel().select(group);
+            chatController.setGroupOrdering(groupInput.groupName, groupInput.causalOrdering);
         }
     }
 
@@ -411,6 +428,6 @@ public class ChatView {
     private record UserInput(String ipAddress, String name, int port) {
     }
 
-    private record GroupInput(String groupName, String ipAddress, String username, int port) {
+    private record GroupInput(String groupName, String ipAddress, String username, int port, boolean causalOrdering) {
     }
 }
