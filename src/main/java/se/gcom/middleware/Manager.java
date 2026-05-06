@@ -55,7 +55,7 @@ public class Manager {
         ChatMessage finalMsg = orderingModule.handleOutgoingMessage(msg, msg.getGroupId());
         Message m = Message.newBuilder().setChatMessage(finalMsg).build();
         // print all messages for debug
-        System.out.println(addresses);
+        System.out.println("Sending to" + addresses);
         // let communication module send the message
         communicationService.multicast(m, addresses);
     }
@@ -103,9 +103,15 @@ public class Manager {
         return communicationService.start();
     }
 
-    public void joinGroup(String name) throws StatusRuntimeException {
+    public void joinGroup(String name, String ip) throws StatusRuntimeException {
         communicationService.addGroupToReliablePairing(name, true); //Should be replaced with actual information from ack
-        ArrayList<String> addresses = groupManagement.joinGroup(name);
+        ArrayList<String> addresses;
+        if (groupManagement.NamingServerIsUp()){
+            addresses = groupManagement.joinGroup(name);
+        } else {
+            addresses = new ArrayList<>();
+            addresses.add(ip);
+        }
         GroupMembership g = GroupMembership.newBuilder()
                 .setGroupId(name)
                 .setSenderId(groupManagement.getAddress())
@@ -129,7 +135,21 @@ public class Manager {
             orderingModule.setUpGroup(name, groupType);
             // join the group with the vector clock we
             orderingModule.joinGroup(name, membershipAck.getVectorClockMap());
+            if(!namingServerIsUp()){
+                ArrayList<String> newAddresses =  new ArrayList<>(membershipAck.getMembersList());
+                groupManagement.joinGroup(name,newAddresses);
+                newAddresses.remove(ip);
+                newAddresses.remove(myAddress);
+                communicationService.multicast(m, newAddresses);
+            }
         }
+    }
+
+    public boolean namingServerIsUp(){
+        return groupManagement.NamingServerIsUp();
+    }
+    public List<String> getMembers(String group){
+        return groupManagement.getAddresses(group);
     }
 
     public void leaveGroup(ChatGroup group) {

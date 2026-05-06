@@ -117,7 +117,7 @@ public class ChatController {
         return false;
     }
 
-    public ChatGroup joinGroup(String name) {
+    public ChatGroup joinGroup(String name, String ip) {
         if (name == null || name.isBlank()) {
             return null;
         }
@@ -134,7 +134,7 @@ public class ChatController {
         selectedGroup = group;
 
         if (manager != null) {
-            manager.joinGroup(trimmedName);
+            manager.joinGroup(trimmedName, ip);
         }
 
         return group;

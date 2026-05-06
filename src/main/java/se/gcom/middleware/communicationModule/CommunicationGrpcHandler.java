@@ -44,21 +44,28 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                 manager.deliverIncomingMessage(groupMembership);
 
                 if (groupMembership.getJoining()){
+                    MembershipAck.Builder membershipAckBuilder = MembershipAck.newBuilder();
                     if (manager.orderingIsCausal(groupMembership.getGroupId())){
                         // the group is causally ordered so we need to append the vector clock to the ack
                         Map<String, Integer> currentVC = manager.getCurrentVectorClock(groupMembership.getGroupId());
                         // joining message, respond ack with vector clock
-                        MembershipAck membershipAck = MembershipAck.newBuilder().putAllVectorClock(currentVC).setIsCausal(true).build();
-                        // pack into the ack
-                        Ack ack = Ack.newBuilder()
-                                .setSuccess(true)
-                                .setMembership(membershipAck)
-                                .build();
-
-                        responseObserver.onNext(ack);
-                        responseObserver.onCompleted();
-                        return;
+                        membershipAckBuilder.putAllVectorClock(currentVC).setIsCausal(true);
                     }
+
+                    if(!manager.namingServerIsUp()){
+                        membershipAckBuilder.addAllMembers(manager.getMembers(groupMembership.getGroupId()));
+                    }
+
+                    MembershipAck membershipAck = membershipAckBuilder.build();
+                    // pack into the ack
+                    Ack ack = Ack.newBuilder()
+                            .setSuccess(true)
+                            .setMembership(membershipAck)
+                            .build();
+
+                    responseObserver.onNext(ack);
+                    responseObserver.onCompleted();
+                    return;
                 }
                 break;
         }
