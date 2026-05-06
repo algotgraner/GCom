@@ -4,6 +4,7 @@ import se.gcom.middleware.Manager;
 import se.gcom.middleware.communicationModule.ChatMessage;
 import se.gcom.middleware.communicationModule.Message;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +32,7 @@ public class OrderingModule {
         groupOrdering.put(groupName, type);
         if (type == OrderingType.CAUSAL) {
             // create vector clock
-            VectorClock vc = new VectorClock();
+            VectorClock vc = new VectorClock(myAddress);
             vc.increment(myAddress);
             vectorClockMap.put(groupName, vc);
             holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
@@ -42,11 +43,10 @@ public class OrderingModule {
         OrderingType type = groupOrdering.getOrDefault(groupName, OrderingType.UNORDERED);
 
         if (type == OrderingType.CAUSAL) {
-            VectorClock vc = new VectorClock();
+            VectorClock vc = new VectorClock(myAddress);
             if (groupVectorClock != null && !groupVectorClock.isEmpty()) {
                 vc.updateFromMap(groupVectorClock);
             }
-            vc.increment(myAddress);
             vectorClockMap.put(groupName, vc);
             holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
             System.out.println("[Ordering] Joined CAUSAL group: " + groupName +" VC: " + vc);
@@ -102,6 +102,8 @@ public class OrderingModule {
         System.out.println("Can deliver?: " + myVC.canDeliver(incomingClock, msg.getSenderId()));
         System.out.println("Holdback queue size: " + queue.size());
 
+        //boolean isOwnMessage = msg.getSenderId().equals(myAddress);
+
         if (myVC.canDeliver(incomingClock, msg.getSenderId())) {
             // deliver immediately
             manager.deliverIncomingMessage(msg);
@@ -109,7 +111,7 @@ public class OrderingModule {
             myVC.updateFromMap(incomingClock);
 
             // check holdback queue for newly deliverable messages
-            //checkHoldbackQueue(groupId) needs to be implemented
+            checkHoldbackQueue(groupId);
         } else {
             // put at holdback queue
             queue.add(msg);
@@ -117,6 +119,37 @@ public class OrderingModule {
         }
     }
 
+    private void checkHoldbackQueue(String groupId) {
+        Queue<ChatMessage> queue = holdbackQueue.get(groupId);
+        VectorClock myVC = vectorClockMap.get(groupId);
+
+        if (queue == null || myVC == null) return;
+
+        boolean delivered;
+        do {
+            delivered = false;
+            for (ChatMessage m : new ArrayList<>(queue)) {
+                if (myVC.canDeliver(m.getVectorClockMap(), m.getSenderId())) {
+                    queue.remove(m);
+                    manager.deliverIncomingMessage(m);
+                    myVC.updateFromMap(m.getVectorClockMap());
+                    delivered = true;
+                    break;
+                }
+            }
+        } while (delivered);
+    }
+
+    public void addMemberToVectorClock(String groupName, String newMemberAddress) {
+        if (!orderingIsCausal(groupName)) return;
+
+        VectorClock vc = vectorClockMap.get(groupName);
+        if (vc != null) {
+            vc.updateFromMap(Map.of(newMemberAddress, 0));
+            System.out.println("[Ordering] Added new member " + newMemberAddress +
+                    " to vector clock → " + vc);
+        }
+    }
 
     public Map<String, Integer> getVectorClock(String groupName) {
         VectorClock vc = vectorClockMap.get(groupName);

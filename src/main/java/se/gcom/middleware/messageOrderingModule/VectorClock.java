@@ -5,6 +5,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class VectorClock {
     private final Map<String, Integer> clock = new ConcurrentHashMap<>();
+    private final String myAddress;
+    public VectorClock(String myAddress){
+        this.myAddress = myAddress;
+    }
 
     public void increment(String myAddress){
         // increment own spot with 1
@@ -26,10 +30,18 @@ public class VectorClock {
         int ourClockCount = clock.getOrDefault(senderID, 0);
         int incomingClockCount = incomingClock.getOrDefault(senderID, 0);
 
-        // we can not deliver if incoming clock has seen more
-        if (incomingClockCount != ourClockCount + 1){
-            System.out.println("CAN NOT DELIVER FIRST");
-            return false;
+        if (senderID.equals(myAddress)) {
+            // already incremented our clock when we sent it, incoming must be the same
+            if (incomingClockCount != ourClockCount) {
+                System.out.println("CAN NOT DELIVER FIRST (own message)");
+                return false;
+            }
+        } else {
+            // we can not deliver if it is not the clock that we expect
+            if (incomingClockCount != ourClockCount + 1) {
+                System.out.println("CAN NOT DELIVER FIRST (other)");
+                return false;
+            }
         }
 
         // chiterate over all other processes clocks to see if they have seen something we have not
@@ -53,14 +65,6 @@ public class VectorClock {
 
     public Map<String, Integer> attachClock(){
         return new ConcurrentHashMap<>(clock);
-    }
-
-    public static VectorClock fromProto(Map<String, Integer> protoMap) {
-        VectorClock vc = new VectorClock();
-        if (protoMap != null){
-            vc.clock.putAll(protoMap);
-        }
-        return vc;
     }
 
     public String toString() {

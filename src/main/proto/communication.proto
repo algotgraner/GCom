@@ -42,6 +42,7 @@ message MembershipAck {
   int32 viewId = 1;
   repeated string members = 2;
   map<string, int32> vectorClock = 3;
+  bool isCausal = 4;
 }
 
 message DataAck { }

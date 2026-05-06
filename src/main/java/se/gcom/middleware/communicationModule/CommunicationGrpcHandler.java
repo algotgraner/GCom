@@ -49,7 +49,7 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                         // the group is causally ordered so we need to append the vector clock to the ack
                         Map<String, Integer> currentVC = manager.getCurrentVectorClock(groupMembership.getGroupId());
                         // joining message, respond ack with vector clock
-                        membershipAckBuilder.putAllVectorClock(currentVC);
+                        membershipAckBuilder.putAllVectorClock(currentVC).setIsCausal(true);
                     }
 
                     if(!manager.namingServerIsUp()){
