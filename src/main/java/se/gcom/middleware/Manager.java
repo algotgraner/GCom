@@ -1,7 +1,6 @@
 package se.gcom.middleware;
 
 import io.grpc.StatusRuntimeException;
-import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.app.model.ChatGroup;
@@ -94,8 +93,14 @@ public class Manager {
 
     }
 
-    public void addGroup(String groupName, boolean reliable) {
+    public void addGroup(String groupName) {
         groupManagement.createNewGroup(groupName, new ArrayList<>());
+    }
+
+    public void addStaticGroup(String groupName, ArrayList<String> groupMembers) {
+        groupManagement.createNewStaticGroup(groupName, groupMembers);
+    }
+    public void addGroupToReliablePairing(String groupName, boolean reliable){
         communicationService.addGroupToReliablePairing(groupName, reliable);
     }
 

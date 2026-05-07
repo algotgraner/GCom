@@ -14,12 +14,14 @@ import java.util.List;
 public class GroupManagement {
     private NamingServerCommunication namingServerCommunication;
     private HashMap<String, ArrayList<String>> groupAddressMap;
+    private HashMap<String, ArrayList<String>> staticGroupMembers;
     private String address;
     private boolean namingServerIsUp;
 
     public GroupManagement(int port){
         namingServerCommunication = new NamingServerCommunication();
         groupAddressMap = new HashMap<>();
+        staticGroupMembers = new HashMap<>();
         String ip = getIpAddress();
         address = ip + ":" + port;
         namingServerIsUp = namingServerCommunication.isUp();
@@ -41,6 +43,15 @@ public class GroupManagement {
         addresses.add(this.address);
         if(namingServerIsUp) {
             namingServerCommunication.createNewGroup(groupName, addresses);
+        }
+    }
+
+    public void createNewStaticGroup(String groupName, ArrayList<String> groupMembers){
+        groupMembers.add(address);
+        staticGroupMembers.put(groupName, groupMembers);
+        groupAddressMap.put(groupName, new ArrayList<>(List.of(address)));
+        if(namingServerIsUp) {
+            namingServerCommunication.createNewGroup(groupName, new ArrayList<>(List.of(address)));
         }
     }
 

@@ -197,6 +197,17 @@ public class ChatView {
         HBox orderingBox = new HBox(15, unorderedRadio, causalRadio);
         orderingBox.setPadding(new Insets(5, 0, 5, 0));
 
+        ToggleGroup groupGroup = new ToggleGroup();
+
+        RadioButton staticRadio = new RadioButton("Static");
+        RadioButton dynamicRadio = new RadioButton("Dynamic");
+        staticRadio.setToggleGroup(groupGroup);
+        dynamicRadio.setToggleGroup(groupGroup);
+        dynamicRadio.setSelected(true);                    // default to Causal (more interesting)
+
+        HBox groupBox = new HBox(15, dynamicRadio, staticRadio);
+        groupBox.setPadding(new Insets(5, 0, 5, 0));
+
 
         GridPane content = new GridPane();
         content.setHgap(10);
@@ -207,6 +218,7 @@ public class ChatView {
         content.addRow(2, new Label("IP address"), ipAddressField);
         content.addRow(3, new Label("Port"), portField);
         content.addRow(4, new Label("Ordering Type"), orderingBox);
+        content.addRow(5, new Label("Group Classification"), groupBox);
 
         dialog.getDialogPane().setContent(content);
 
@@ -221,7 +233,8 @@ public class ChatView {
                         ipAddressField.getText().trim(),
                         usernameField.getText().trim(),
                         Integer.parseInt(portField.getText().trim()),
-                        causalRadio.isSelected()
+                        causalRadio.isSelected(),
+                        staticRadio.isSelected()
                 );
             } catch (NumberFormatException e) {
                 return null;
@@ -285,7 +298,8 @@ public class ChatView {
         ChatGroup group = chatController.createGroup(
                 groupInput.groupName(),
                 groupInput.causalOrdering(),
-                true
+                true,
+                groupInput.staticGroup()
         );
         if (group != null) {
             groups.getSelectionModel().select(group);
@@ -437,6 +451,6 @@ public class ChatView {
     private record UserInput(String ipAddress, String name, int port) {
     }
 
-    private record GroupInput(String groupName, String ipAddress, String username, int port, boolean causalOrdering) {
+    private record GroupInput(String groupName, String ipAddress, String username, int port, boolean causalOrdering, boolean staticGroup) {
     }
 }

@@ -8,6 +8,8 @@ import se.gcom.app.model.ChatMessage;
 import se.gcom.middleware.Manager;
 import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
+import java.util.ArrayList;
+
 public class ChatController {
 
     private Manager manager;
@@ -41,7 +43,7 @@ public class ChatController {
         }
     }
 
-    public ChatGroup createGroup(String name, boolean causalOrdering, boolean reliable) {
+    public ChatGroup createGroup(String name, boolean causalOrdering, boolean reliable, boolean staticGroup) {
         if (name == null || name.isBlank()) {
             return null;
         }
@@ -52,7 +54,12 @@ public class ChatController {
         selectedGroup = group;
 
         if (manager != null) {
-            manager.addGroup(trimmedName, reliable);
+            if (staticGroup) {
+                manager.addStaticGroup(trimmedName, new ArrayList<>());
+            } else {
+                manager.addGroup(trimmedName);
+            }
+            manager.addGroupToReliablePairing(trimmedName, reliable);
         }
 
         return group;
