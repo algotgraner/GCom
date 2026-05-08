@@ -1,9 +1,10 @@
 package se.gcom.middleware;
 
 import io.grpc.StatusRuntimeException;
-import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
+import se.gcom.app.debug.DebugEventType;
+import se.gcom.app.debug.DebugMonitor;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.middleware.communicationModule.*;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
@@ -20,6 +21,7 @@ public class Manager {
     OrderingModule orderingModule;
     String myAddress;
     private long messageCounter;
+    private final DebugMonitor debugMonitor = new DebugMonitor();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -35,6 +37,11 @@ public class Manager {
         this.groupManagement = new GroupManagement(port);
         this.myAddress = groupManagement.getAddress();
         this.orderingModule = new OrderingModule(this, myAddress);
+        debugMonitor.recordEvent(
+                DebugEventType.PROCESS_STARTED,
+                myAddress,
+                "Communication service started on port " + port
+        );
     }
 
     private String generateMessageId() {
@@ -177,5 +184,9 @@ public class Manager {
 
     public void setGroupOrdering(String groupId, OrderingModule.OrderingType type) {
         orderingModule.setUpGroup(groupId, type);
+    }
+
+    public DebugMonitor getDebugMonitor() {
+        return debugMonitor;
     }
 }

@@ -22,7 +22,7 @@ public class App extends Application {
         chatController.setManager(manager);
         debugController.setManager(manager);
 
-        ChatView chatView = new ChatView(chatController);
+        ChatView chatView = new ChatView(chatController, debugController);
 
         manager.start();
 
