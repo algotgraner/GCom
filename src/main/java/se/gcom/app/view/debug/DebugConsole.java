@@ -1,13 +1,16 @@
 package se.gcom.app.view.debug;
 
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import se.gcom.app.controller.DebugController;
 import se.gcom.app.debug.DebugEvent;
+
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class DebugConsole extends VBox {
 
@@ -18,23 +21,48 @@ public class DebugConsole extends VBox {
         Button mockEventsButton = new Button("Add mock events");
         mockEventsButton.setOnAction(event -> controller.addMockEvents());
 
-        ListView<DebugEvent> listView = new ListView<>();
-        listView.setItems(controller.getEvents());
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+                .withZone(ZoneId.systemDefault());
 
-        listView.setCellFactory(view -> new ListCell<>() {
-            @Override
-            protected void updateItem(DebugEvent event, boolean empty) {
-                super.updateItem(event, empty);
+        TableView<DebugEvent> table = new TableView<>();
+        table.setItems(controller.getEvents());
 
-                if (empty || event == null) {
-                    setText(null);
-                } else {
-                    setText(event.toDisplayString());
-                }
-            }
-        });
+        TableColumn<DebugEvent, Number> sequenceColumn = new TableColumn<>("#");
+        sequenceColumn.setCellValueFactory(cell ->
+                new SimpleLongProperty(cell.getValue().sequenceNumber())
+        );
 
-        VBox.setVgrow(listView, Priority.ALWAYS);
-        getChildren().addAll(mockEventsButton, listView);
+        TableColumn<DebugEvent, String> timeColumn = new TableColumn<>("Time");
+        timeColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(timeFormatter.format(cell.getValue().timestamp()))
+        );
+
+        TableColumn<DebugEvent, String> typeColumn = new TableColumn<>("Type");
+        typeColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(cell.getValue().type().toString())
+        );
+
+        TableColumn<DebugEvent, String> sourceColumn = new TableColumn<>("Source");
+        sourceColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(cell.getValue().source())
+        );
+
+        TableColumn<DebugEvent, String> detailsColumn = new TableColumn<>("Details");
+        detailsColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(cell.getValue().details())
+        );
+
+        table.getColumns().addAll(
+                sequenceColumn,
+                timeColumn,
+                typeColumn,
+                sourceColumn,
+                detailsColumn
+        );
+
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+
+        VBox.setVgrow(table, Priority.ALWAYS);
+        getChildren().addAll(mockEventsButton, table);
     }
 }
