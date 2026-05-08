@@ -1,9 +1,10 @@
 package se.gcom.middleware;
 
 import io.grpc.StatusRuntimeException;
-import se.NameServer.NamingServer;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
+import se.gcom.app.debug.DebugEventType;
+import se.gcom.app.debug.DebugMonitor;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.middleware.communicationModule.*;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
@@ -20,6 +21,7 @@ public class Manager {
     OrderingModule orderingModule;
     String myAddress;
     private long messageCounter;
+    private final DebugMonitor debugMonitor = new DebugMonitor();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -35,6 +37,11 @@ public class Manager {
         this.groupManagement = new GroupManagement(port);
         this.myAddress = groupManagement.getAddress();
         this.orderingModule = new OrderingModule(this, myAddress);
+        debugMonitor.recordEvent(
+                DebugEventType.PROCESS_STARTED,
+                myAddress,
+                "Communication service started on port " + port
+        );
     }
 
     private String generateMessageId() {
@@ -44,12 +51,20 @@ public class Manager {
     public void sendMessage(String groupName, String message){
         List<String> addresses = groupManagement.getAddresses(groupName);
         // Create the message
+
+        String messageId = generateMessageId();
         ChatMessage msg = ChatMessage.newBuilder()
-                        .setMessageId(generateMessageId())
+                        .setMessageId(messageId)
                         .setSenderId(groupManagement.getAddress())
                         .setGroupId(groupName)
                         .setPayload(message)
                         .build();
+
+        debugMonitor.recordEvent(
+                DebugEventType.MESSAGE_CREATED,
+                myAddress,
+                "Created message " + messageId + " in group " + groupName + ": " + message
+        );
 
         // let ordering module append the vector clock if needed
         ChatMessage finalMsg = orderingModule.handleOutgoingMessage(msg, msg.getGroupId());
@@ -73,6 +88,14 @@ public class Manager {
     public void deliverIncomingMessage(ChatMessage msg){
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
         chatController.receiveMessage(msg.getSenderId(), msg.getGroupId(), msg.getPayload(), outgoing);
+        debugMonitor.recordEvent(
+                DebugEventType.MESSAGE_DELIVERED,
+                myAddress,
+                "Delivered message " + msg.getMessageId()
+                        + " from " + msg.getSenderId()
+                        + " in group " + msg.getGroupId()
+                        + ": " + msg.getPayload()
+        );
     }
 
     public void deliverIncomingMessage(GroupMembership msg) {
@@ -177,5 +200,9 @@ public class Manager {
 
     public void setGroupOrdering(String groupId, OrderingModule.OrderingType type) {
         orderingModule.setUpGroup(groupId, type);
+    }
+
+    public DebugMonitor getDebugMonitor() {
+        return debugMonitor;
     }
 }

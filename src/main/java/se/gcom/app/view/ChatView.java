@@ -13,6 +13,7 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import se.gcom.app.controller.ChatController;
+import se.gcom.app.controller.DebugController;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.app.model.ChatMessage;
 
@@ -22,6 +23,7 @@ import java.util.Optional;
 public class ChatView {
     private final BorderPane root;
     private final ChatController chatController;
+    private final DebugController debugController;
     private final ListView<ChatGroup> groups = new ListView<>();
     private final VBox messagesBox = new VBox(10);
     private final TextField inputField = new TextField();
@@ -34,8 +36,9 @@ public class ChatView {
     private ObservableList<ChatMessage> visibleMessages;
     private final ListChangeListener<ChatMessage> messageListener = change -> renderMessages();
 
-    public ChatView(ChatController chatController) {
+    public ChatView(ChatController chatController, DebugController debugController) {
         this.chatController = chatController;
+        this.debugController = debugController;
         this.root = new BorderPane();
         createLayout();
         setupActions();
@@ -421,7 +424,7 @@ public class ChatView {
     }
 
     private void openDebugWindow() {
-        DebugView debugView = new DebugView();
+        DebugView debugView = new DebugView(debugController);
 
         Stage debugStage = new Stage();
         debugStage.setTitle("Debug View");
