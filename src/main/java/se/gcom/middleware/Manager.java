@@ -51,12 +51,20 @@ public class Manager {
     public void sendMessage(String groupName, String message){
         List<String> addresses = groupManagement.getAddresses(groupName);
         // Create the message
+
+        String messageId = generateMessageId();
         ChatMessage msg = ChatMessage.newBuilder()
-                        .setMessageId(generateMessageId())
+                        .setMessageId(messageId)
                         .setSenderId(groupManagement.getAddress())
                         .setGroupId(groupName)
                         .setPayload(message)
                         .build();
+
+        debugMonitor.recordEvent(
+                DebugEventType.MESSAGE_CREATED,
+                myAddress,
+                "Created message " + messageId + " in group " + groupName + ": " + message
+        );
 
         // let ordering module append the vector clock if needed
         ChatMessage finalMsg = orderingModule.handleOutgoingMessage(msg, msg.getGroupId());
@@ -80,6 +88,14 @@ public class Manager {
     public void deliverIncomingMessage(ChatMessage msg){
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
         chatController.receiveMessage(msg.getSenderId(), msg.getGroupId(), msg.getPayload(), outgoing);
+        debugMonitor.recordEvent(
+                DebugEventType.MESSAGE_DELIVERED,
+                myAddress,
+                "Delivered message " + msg.getMessageId()
+                        + " from " + msg.getSenderId()
+                        + " in group " + msg.getGroupId()
+                        + ": " + msg.getPayload()
+        );
     }
 
     public void deliverIncomingMessage(GroupMembership msg) {

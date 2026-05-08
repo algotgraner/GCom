@@ -1,5 +1,7 @@
 package se.gcom.app.debug;
 
 public enum DebugEventType {
-    PROCESS_STARTED
+    PROCESS_STARTED,
+    MESSAGE_CREATED,
+    MESSAGE_DELIVERED
 }
