@@ -43,7 +43,7 @@ public class ChatController {
         }
     }
 
-    public ChatGroup createGroup(String name, boolean causalOrdering, boolean reliable, boolean staticGroup) {
+    public ChatGroup createGroup(String name, boolean causalOrdering, boolean reliable, boolean staticGroup, ArrayList<String> ipAddresses) {
         if (name == null || name.isBlank()) {
             return null;
         }
@@ -55,7 +55,7 @@ public class ChatController {
 
         if (manager != null) {
             if (staticGroup) {
-                manager.addStaticGroup(trimmedName, new ArrayList<>());
+                manager.addStaticGroup(trimmedName, ipAddresses);
             } else {
                 manager.addGroup(trimmedName);
             }
