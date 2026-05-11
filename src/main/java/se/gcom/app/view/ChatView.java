@@ -1,5 +1,6 @@
 package se.gcom.app.view;
 
+import javafx.collections.FXCollections;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import javafx.collections.ListChangeListener;
@@ -19,6 +20,8 @@ import se.gcom.app.controller.DebugController;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.app.model.ChatMessage;
 
+import java.lang.reflect.Member;
+import java.util.ArrayList;
 import java.util.Optional;
 
 
@@ -182,14 +185,10 @@ public class ChatView {
         TextField groupNameField = new TextField();
         groupNameField.setPromptText("Group name");
 
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Username");
 
         TextField ipAddressField = new TextField();
         ipAddressField.setPromptText("IP address");
 
-        TextField portField = new TextField();
-        portField.setPromptText("Port");
 
         ToggleGroup orderingGroup = new ToggleGroup();
 
@@ -202,16 +201,51 @@ public class ChatView {
         HBox orderingBox = new HBox(15, unorderedRadio, causalRadio);
         orderingBox.setPadding(new Insets(5, 0, 5, 0));
 
+        ToggleGroup groupGroup = new ToggleGroup();
+
+        RadioButton staticRadio = new RadioButton("Static");
+        RadioButton dynamicRadio = new RadioButton("Dynamic");
+        staticRadio.setToggleGroup(groupGroup);
+        dynamicRadio.setToggleGroup(groupGroup);
+        dynamicRadio.setSelected(true);
+
+        ArrayList<String> members = new ArrayList<>();
+
+        Button addMemberButton = new Button("Add Member");
+
+        ipAddressField.visibleProperty().bind(staticRadio.selectedProperty());
+        ipAddressField.managedProperty().bind(staticRadio.selectedProperty());
+
+        addMemberButton.visibleProperty().bind(staticRadio.selectedProperty());
+        addMemberButton.managedProperty().bind(staticRadio.selectedProperty());
+
+        Label ipLabel = new Label("IP address");
+
+        ipLabel.visibleProperty().bind(staticRadio.selectedProperty());
+        ipLabel.managedProperty().bind(staticRadio.selectedProperty());
+
+        addMemberButton.setOnAction(e -> {
+            members.add(ipAddressField.getText().trim());
+            ipAddressField.clear();
+        });
+
+        HBox groupBox = new HBox(15, dynamicRadio, staticRadio);
+        groupBox.setPadding(new Insets(5, 0, 5, 0));
+
 
         GridPane content = new GridPane();
         content.setHgap(10);
         content.setVgap(10);
         content.setPadding(new Insets(8, 0, 0, 0));
         content.addRow(0, new Label("Group name"), groupNameField);
-        content.addRow(1, new Label("Username"), usernameField);
-        content.addRow(2, new Label("IP address"), ipAddressField);
-        content.addRow(3, new Label("Port"), portField);
         content.addRow(4, new Label("Ordering Type"), orderingBox);
+        content.addRow(5, new Label("Group Classification"), groupBox);;
+        content.addRow(8, ipLabel, ipAddressField);
+        content.addRow(9, addMemberButton);
+
+        staticRadio.selectedProperty().addListener((obs, oldVal, isStatic) -> {
+            dialog.getDialogPane().getScene().getWindow().sizeToScene();
+        });
 
         dialog.getDialogPane().setContent(content);
 
@@ -223,10 +257,9 @@ public class ChatView {
             try {
                 return new GroupInput(
                         groupNameField.getText().trim(),
-                        ipAddressField.getText().trim(),
-                        usernameField.getText().trim(),
-                        Integer.parseInt(portField.getText().trim()),
-                        causalRadio.isSelected()
+                        members,
+                        causalRadio.isSelected(),
+                        staticRadio.isSelected()
                 );
             } catch (NumberFormatException e) {
                 return null;
@@ -291,13 +324,15 @@ public class ChatView {
             ChatGroup group = chatController.createGroup(
                     groupInput.groupName(),
                     groupInput.causalOrdering(),
-                    true
+                    true,
+                    groupInput.staticGroup(),
+                    groupInput.ipAddresses
             );
             if (group != null) {
                 groups.getSelectionModel().select(group);
                 chatController.setGroupOrdering(groupInput.groupName, groupInput.causalOrdering);
             }
-        } catch (StatusRuntimeException e){
+        }catch (StatusRuntimeException e){
             Status.Code code = e.getStatus().getCode();
             if (code == Status.Code.ALREADY_EXISTS) {
                 showErrorAlert("Group Already Exists",
@@ -460,6 +495,6 @@ public class ChatView {
     private record UserInput(String ipAddress, String name, int port) {
     }
 
-    private record GroupInput(String groupName, String ipAddress, String username, int port, boolean causalOrdering) {
+    private record GroupInput(String groupName, ArrayList<String> ipAddresses, boolean causalOrdering, boolean staticGroup) {
     }
 }

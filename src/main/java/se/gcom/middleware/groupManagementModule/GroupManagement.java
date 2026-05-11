@@ -7,19 +7,21 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class GroupManagement {
     private NamingServerCommunication namingServerCommunication;
     private HashMap<String, ArrayList<String>> groupAddressMap;
+    private HashMap<String, ArrayList<String>> staticGroupMembers;
+    private Set<String> canSendMessages;
     private String address;
     private boolean namingServerIsUp;
 
     public GroupManagement(int port){
         namingServerCommunication = new NamingServerCommunication();
         groupAddressMap = new HashMap<>();
+        staticGroupMembers = new HashMap<>();
+        canSendMessages = new HashSet<>();
         String ip = getIpAddress();
         address = ip + ":" + port;
         namingServerIsUp = namingServerCommunication.isUp();
@@ -48,6 +50,15 @@ public class GroupManagement {
             namingServerCommunication.createNewGroup(groupName, addresses);
         }
         groupAddressMap.put(groupName, addresses);
+    }
+
+    public void createNewStaticGroup(String groupName, ArrayList<String> groupMembers){
+        groupMembers.add(address);
+        staticGroupMembers.put(groupName, groupMembers);
+        groupAddressMap.put(groupName, new ArrayList<>(List.of(address)));
+        if(namingServerIsUp) {
+            namingServerCommunication.createNewGroup(groupName, new ArrayList<>(List.of(address)));
+        }
     }
 
     public ArrayList<String> joinGroup(String groupName) throws StatusRuntimeException {
@@ -89,6 +100,37 @@ public class GroupManagement {
     }
     public void removeMember(String groupName, String ipAddress){
         groupAddressMap.get(groupName).remove(ipAddress);
+    }
+
+    public void addStaticGroup(String group, ArrayList<String> addresses){
+        staticGroupMembers.put(group, addresses);
+    }
+
+    public boolean isStaticGroup(String group){
+        return staticGroupMembers.containsKey(group);
+    }
+
+    public ArrayList<String> getStaticGroupMembers(String group){
+        return staticGroupMembers.get(group);
+    }
+    public boolean canStartSendingMessages(String group){
+        return staticGroupMembers.get(group).size() == groupAddressMap.get(group).size();
+    }
+    public void addCanSendMessages(String group){
+        canSendMessages.add(group);
+        staticGroupMembers.get(group).clear();
+    }
+
+    public boolean canSendMessages(String group){
+        System.out.println("Current Members:" + groupAddressMap.get(group));
+        System.out.println("Expected Members:" + staticGroupMembers.get(group));
+        return canSendMessages.contains(group);
+    }
+
+    public boolean canJoinStaticGroup(String group, String address){
+        System.out.println(address + "wants to join group " + group);
+        System.out.println("Static Members:" + staticGroupMembers.get(group));
+        return staticGroupMembers.get(group).contains(address);
     }
 
     public void shutdown(){
