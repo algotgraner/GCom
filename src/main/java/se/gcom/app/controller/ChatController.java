@@ -153,7 +153,7 @@ public class ChatController {
 
     public void leaveGroup() {
         ChatGroup group = selectedGroup;
-        manager.leaveGroup(group);
+        manager.leaveGroup(group.getName());
         groups.remove(group);
     }
 
