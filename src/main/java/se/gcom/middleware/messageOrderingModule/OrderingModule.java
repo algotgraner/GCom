@@ -1,5 +1,6 @@
 package se.gcom.middleware.messageOrderingModule;
 
+import se.gcom.app.debug.DebugEventType;
 import se.gcom.middleware.Manager;
 import se.gcom.middleware.communicationModule.ChatMessage;
 import se.gcom.middleware.communicationModule.Message;
@@ -36,6 +37,7 @@ public class OrderingModule {
             vc.increment(myAddress);
             vectorClockMap.put(groupName, vc);
             holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
+            recordVectorClock(groupName, "created", vc.attachClock());
         }
     }
 
@@ -50,6 +52,7 @@ public class OrderingModule {
             vectorClockMap.put(groupName, vc);
             holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
             System.out.println("[Ordering] Joined CAUSAL group: " + groupName +" VC: " + vc);
+            recordVectorClock(groupName, "joined", vc.attachClock());
         } else {
             System.out.println("[Ordering] Joined UNORDERED group: " + groupName );
         }
@@ -63,7 +66,9 @@ public class OrderingModule {
             // here we need to get and increment the vector clock
             VectorClock vc = vectorClockMap.get(groupName);
             vc.increment(myAddress);
-            return msg.toBuilder().putAllVectorClock(vc.attachClock()).build();
+            Map<String, Integer> updatedClock = vc.attachClock();
+            recordVectorClock(groupName, "send", updatedClock);
+            return msg.toBuilder().putAllVectorClock(updatedClock).build();
         }
 
     }
@@ -109,6 +114,7 @@ public class OrderingModule {
             manager.deliverIncomingMessage(msg);
             // update oru clock
             myVC.updateFromMap(incomingClock);
+            recordVectorClock(groupId, "delivered " + msg.getMessageId(), myVC.attachClock());
 
             // check holdback queue for newly deliverable messages
             checkHoldbackQueue(groupId);
@@ -116,6 +122,15 @@ public class OrderingModule {
             // put at holdback queue
             queue.add(msg);
             System.out.println("Message " + msg.getMessageId() +" held back, current holdback size: " + queue.size());
+            manager.getDebugMonitor().recordEvent(
+                    DebugEventType.MESSAGE_HELD_BACK,
+                    myAddress,
+                    "group=" + groupId
+                            + " message=" + msg.getMessageId()
+                            + " sender=" + msg.getSenderId()
+                            + " incoming=" + incomingClock
+                            + " local=" + myVC.attachClock()
+            );
         }
     }
 
@@ -133,6 +148,7 @@ public class OrderingModule {
                     queue.remove(m);
                     manager.deliverIncomingMessage(m);
                     myVC.updateFromMap(m.getVectorClockMap());
+                    recordVectorClock(groupId, "released " + m.getMessageId(), myVC.attachClock());
                     delivered = true;
                     break;
                 }
@@ -148,6 +164,7 @@ public class OrderingModule {
             vc.updateFromMap(Map.of(newMemberAddress, 0));
             System.out.println("[Ordering] Added new member " + newMemberAddress +
                     " to vector clock → " + vc);
+            recordVectorClock(groupName, "member " + newMemberAddress + " added", vc.attachClock());
         }
     }
 
@@ -160,6 +177,16 @@ public class OrderingModule {
         return new ConcurrentHashMap<>();
     }
 
+    public void setVectorClockValue(String groupName, String process, int value) {
+        VectorClock vc = vectorClockMap.get(groupName);
+        if (vc == null || process == null || process.isBlank()) {
+            return;
+        }
+
+        vc.setValue(process, value);
+        recordVectorClock(groupName, "edited", vc.attachClock());
+    }
+
     public Boolean orderingIsCausal(String groupName){
         OrderingType type = groupOrdering.get(groupName);
         if (type == OrderingType.CAUSAL) {
@@ -167,6 +194,14 @@ public class OrderingModule {
         } else {
             return false;
         }
+    }
+
+    private void recordVectorClock(String groupName, String action, Map<String, Integer> clock) {
+        manager.getDebugMonitor().recordEvent(
+                DebugEventType.VECTOR_CLOCK_UPDATED,
+                myAddress,
+                "group=" + groupName + " action=" + action + " vc=" + clock
+        );
     }
 
 

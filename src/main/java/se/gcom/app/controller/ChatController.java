@@ -20,9 +20,6 @@ public class ChatController {
     private ChatGroup selectedGroup;
 
     public ChatController() {
-        groups.add(new ChatGroup("Group1", "Group 1"));
-        groups.add(new ChatGroup("Group2", "Group 2"));
-        selectedGroup = groups.get(0);
     }
 
     public void setManager(Manager manager) {
@@ -38,9 +35,7 @@ public class ChatController {
     }
 
     public void selectGroup(ChatGroup group) {
-        if (group != null) {
-            selectedGroup = group;
-        }
+        selectedGroup = group;
     }
 
     public ChatGroup createGroup(String name, boolean causalOrdering, boolean reliable, boolean staticGroup, ArrayList<String> ipAddresses) {
@@ -91,7 +86,12 @@ public class ChatController {
 
         // Fallback if group not found
         if (targetGroup == null) {
-            targetGroup = selectedGroup != null ? selectedGroup : groups.get(0);
+            targetGroup = selectedGroup;
+        }
+        if (targetGroup == null) {
+            targetGroup = new ChatGroup(groupName, groupName);
+            groups.add(targetGroup);
+            selectedGroup = targetGroup;
         }
         System.out.println("Outgoing: " + outgoing);
         ChatGroup finalTargetGroup = targetGroup;
@@ -159,8 +159,12 @@ public class ChatController {
 
     public void leaveGroup() {
         ChatGroup group = selectedGroup;
+        if (group == null || manager == null) {
+            return;
+        }
         manager.leaveGroup(group.getName());
         groups.remove(group);
+        selectedGroup = groups.isEmpty() ? null : groups.getFirst();
     }
 
     public void setGroupOrdering(String groupId, boolean causal) {

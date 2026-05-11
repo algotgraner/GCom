@@ -203,6 +203,10 @@ public class Manager {
         return groupManagement.getAddresses(group);
     }
 
+    public List<String> getGroupNames() {
+        return groupManagement.getGroupNames();
+    }
+
     public void leaveGroup(String groupName) {
         GroupMembership g = GroupMembership.newBuilder()
                 .setGroupId(groupName)
@@ -220,6 +224,10 @@ public class Manager {
 
     public Map<String, Integer> getCurrentVectorClock(String groupName) {
         return orderingModule.getVectorClock(groupName);
+    }
+
+    public void setVectorClockValue(String groupName, String process, int value) {
+        orderingModule.setVectorClockValue(groupName, process, value);
     }
 
     public Boolean orderingIsCausal(String groupName){

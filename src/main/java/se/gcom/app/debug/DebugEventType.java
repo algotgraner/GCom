@@ -3,5 +3,12 @@ package se.gcom.app.debug;
 public enum DebugEventType {
     PROCESS_STARTED,
     MESSAGE_CREATED,
-    MESSAGE_DELIVERED
+    MESSAGE_DELIVERED,
+
+    VECTOR_CLOCK_UPDATED,
+    MESSAGE_HELD_BACK,
+
+    NETWORK_SEND,
+    NETWORK_RECEIVE,
+    NETWORK_ACK
 }
