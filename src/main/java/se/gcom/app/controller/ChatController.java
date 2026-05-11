@@ -172,4 +172,8 @@ public class ChatController {
             manager.setGroupOrdering(groupId, type);
         }
     }
+
+    public String getAddress(){
+        return manager.getMyAddress();
+    }
 }
