@@ -136,7 +136,6 @@ public class Manager {
     }
 
     public void joinGroup(String name, String ip) throws StatusRuntimeException {
-        communicationService.addGroupToReliablePairing(name, true); //Should be replaced with actual information from ack
         ArrayList<String> addresses;
         if (groupManagement.NamingServerIsUp()){
             addresses = groupManagement.joinGroup(name);
@@ -184,6 +183,7 @@ public class Manager {
                         }
                     }
                 }
+                communicationService.addGroupToReliablePairing(name, membershipAck.getIsReliable());
             } else {
                 groupManagement.leaveGroup(name);
             }
