@@ -36,6 +36,11 @@ public class GroupManagement {
         }
         return new ArrayList<>(addresses);
     }
+
+    public List<String> getGroupNames(){
+        return new ArrayList<>(groupAddressMap.keySet());
+    }
+
     public void createNewGroup(String groupName, ArrayList<String> addresses){
         // need to include our own address
         addresses.add(this.address);
@@ -85,7 +90,6 @@ public class GroupManagement {
     public void removeMember(String groupName, String ipAddress){
         groupAddressMap.get(groupName).remove(ipAddress);
     }
-
 
     public void shutdown(){
         namingServerCommunication.shutdown();
