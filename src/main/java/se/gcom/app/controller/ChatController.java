@@ -47,13 +47,15 @@ public class ChatController {
         }
 
         String trimmedName = name.trim();
+        if (manager != null) {
+            manager.addGroup(trimmedName, reliable);
+        }
+
+        // only create the group if the manager succeeded
         ChatGroup group = new ChatGroup(createGroupId(trimmedName), trimmedName);
         groups.add(group);
         selectedGroup = group;
 
-        if (manager != null) {
-            manager.addGroup(trimmedName, reliable);
-        }
 
         return group;
     }
