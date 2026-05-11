@@ -13,7 +13,7 @@ public class NamingServerCommunication {
     NamingServiceGrpc.NamingServiceBlockingStub stub;
     public NamingServerCommunication(){
         channel = ManagedChannelBuilder
-                .forAddress("130.239.236.190", 1111)
+                .forAddress("172.20.10.7", 1111)
                 .usePlaintext()
                 .build();
         stub = NamingServiceGrpc.newBlockingStub(channel);
