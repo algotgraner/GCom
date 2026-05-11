@@ -56,6 +56,12 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                         membershipAckBuilder.addAllMembers(manager.getMembers(groupMembership.getGroupId()));
                     }
 
+                    if(manager.isStaticGroup(groupMembership.getGroupId())){
+                        membershipAckBuilder.setIsStatic(true);
+                        membershipAckBuilder.addAllStaticMembers(manager.getStaticGroupMembers(groupMembership.getGroupId()));
+                        System.out.println("Sending static members:" + manager.getStaticGroupMembers(groupMembership.getGroupId()));
+                    }
+
                     MembershipAck membershipAck = membershipAckBuilder.build();
                     // pack into the ack
                     Ack ack = Ack.newBuilder()

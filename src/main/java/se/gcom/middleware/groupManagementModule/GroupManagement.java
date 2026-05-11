@@ -7,14 +7,13 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class GroupManagement {
     private NamingServerCommunication namingServerCommunication;
     private HashMap<String, ArrayList<String>> groupAddressMap;
     private HashMap<String, ArrayList<String>> staticGroupMembers;
+    private Set<String> canSendMessages;
     private String address;
     private boolean namingServerIsUp;
 
@@ -22,6 +21,7 @@ public class GroupManagement {
         namingServerCommunication = new NamingServerCommunication();
         groupAddressMap = new HashMap<>();
         staticGroupMembers = new HashMap<>();
+        canSendMessages = new HashSet<>();
         String ip = getIpAddress();
         address = ip + ":" + port;
         namingServerIsUp = namingServerCommunication.isUp();
@@ -96,6 +96,29 @@ public class GroupManagement {
         groupAddressMap.get(groupName).remove(ipAddress);
     }
 
+    public void addStaticGroup(String group, ArrayList<String> addresses){
+        staticGroupMembers.put(group, addresses);
+    }
+
+    public boolean isStaticGroup(String group){
+        return staticGroupMembers.containsKey(group);
+    }
+
+    public ArrayList<String> getStaticGroupMembers(String group){
+        return staticGroupMembers.get(group);
+    }
+    public boolean canStartSendingMessages(String group){
+        return staticGroupMembers.get(group).size() == groupAddressMap.get(group).size();
+    }
+    public void addCanSendMessages(String group){
+        canSendMessages.add(group);
+    }
+
+    public boolean canSendMessages(String group){
+        System.out.println("Current Members:" + groupAddressMap.get(group));
+        System.out.println("Expected Members:" + staticGroupMembers.get(group));
+        return canSendMessages.contains(group);
+    }
 
     public void shutdown(){
         namingServerCommunication.shutdown();
