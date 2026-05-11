@@ -65,6 +65,8 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                         manager.canStartSendingMessagesCheck(groupMembership.getGroupId());
                     }
 
+                    membershipAckBuilder.setIsReliable(groupToReliable.get(groupMembership.getGroupId()));
+
                     MembershipAck membershipAck = membershipAckBuilder.build();
                     // pack into the ack
                     Ack ack = Ack.newBuilder()
