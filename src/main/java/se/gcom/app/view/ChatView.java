@@ -201,6 +201,17 @@ public class ChatView {
         HBox orderingBox = new HBox(15, unorderedRadio, causalRadio);
         orderingBox.setPadding(new Insets(5, 0, 5, 0));
 
+        ToggleGroup multiCastGroup = new ToggleGroup();
+
+        RadioButton reliableRadio = new RadioButton("Reliable");
+        RadioButton nonReliableRadio = new RadioButton("Non-Reliable");
+        reliableRadio.setToggleGroup(multiCastGroup);
+        nonReliableRadio.setToggleGroup(multiCastGroup);
+        reliableRadio.setSelected(true);
+
+        HBox multiCastBox = new HBox(15, reliableRadio, nonReliableRadio);
+        multiCastBox.setPadding(new Insets(5, 0, 5, 0));
+
         ToggleGroup groupGroup = new ToggleGroup();
 
         RadioButton staticRadio = new RadioButton("Static");
@@ -238,10 +249,11 @@ public class ChatView {
         content.setVgap(10);
         content.setPadding(new Insets(8, 0, 0, 0));
         content.addRow(0, new Label("Group name"), groupNameField);
-        content.addRow(4, new Label("Ordering Type"), orderingBox);
-        content.addRow(5, new Label("Group Classification"), groupBox);;
-        content.addRow(8, ipLabel, ipAddressField);
-        content.addRow(9, addMemberButton);
+        content.addRow(1, new Label("Ordering Type"), orderingBox);
+        content.addRow(2, new Label("Multicast Type"), multiCastBox);
+        content.addRow(3, new Label("Group Classification"), groupBox);;
+        content.addRow(4, ipLabel, ipAddressField);
+        content.addRow(5, addMemberButton);
 
         staticRadio.selectedProperty().addListener((obs, oldVal, isStatic) -> {
             dialog.getDialogPane().getScene().getWindow().sizeToScene();
@@ -259,7 +271,8 @@ public class ChatView {
                         groupNameField.getText().trim(),
                         members,
                         causalRadio.isSelected(),
-                        staticRadio.isSelected()
+                        staticRadio.isSelected(),
+                        reliableRadio.isSelected()
                 );
             } catch (NumberFormatException e) {
                 return null;
@@ -334,7 +347,7 @@ public class ChatView {
             ChatGroup group = chatController.createGroup(
                     groupInput.groupName(),
                     groupInput.causalOrdering(),
-                    true,
+                    groupInput.reliable(),
                     groupInput.staticGroup(),
                     groupInput.ipAddresses
             );
@@ -505,6 +518,6 @@ public class ChatView {
     private record UserInput(String ipAddress, String name, int port) {
     }
 
-    private record GroupInput(String groupName, ArrayList<String> ipAddresses, boolean causalOrdering, boolean staticGroup) {
+    private record GroupInput(String groupName, ArrayList<String> ipAddresses, boolean causalOrdering, boolean staticGroup, boolean reliable) {
     }
 }

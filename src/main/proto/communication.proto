@@ -43,9 +43,10 @@ message MembershipAck {
   repeated string members = 2;
   map<string, int32> vectorClock = 3;
   bool isCausal = 4;
-  bool isStatic = 5;
-  repeated string staticMembers = 6;
-  bool canJoinStaticGroup = 7;
+  bool isReliable = 5;
+  bool isStatic = 6;
+  repeated string staticMembers = 7;
+  bool canJoinStaticGroup = 8;
 }
 
 message DataAck { }
