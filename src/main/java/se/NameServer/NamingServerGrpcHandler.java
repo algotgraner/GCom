@@ -44,15 +44,22 @@ public class NamingServerGrpcHandler extends NamingServiceGrpc.NamingServiceImpl
         ArrayList<String> addresses = new ArrayList<>(request.getAddressesList());
         try {
             namingServer.addNewGroup(groupName, addresses);
+
+            responseObserver.onNext(Empty.newBuilder().build());
+            responseObserver.onCompleted();
+
         }catch (NamingServer.GroupAlreadyExistsException e){
             responseObserver.onError(
                     Status.ALREADY_EXISTS
                             .withDescription(e.getMessage())
                             .asRuntimeException()
             );
+        }catch (Exception e) {
+            responseObserver.onError(
+                    Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException()
+            );
         }
-        responseObserver.onNext(Empty.newBuilder().build());
-        responseObserver.onCompleted();
+
     }
 
     @Override
