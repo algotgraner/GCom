@@ -105,7 +105,7 @@ public class Manager {
             System.out.println("Received join message");
         } else {
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
-            System.out.println("Received remove message");
+            System.out.println("Received leave message");
         }
     }
 
@@ -175,16 +175,16 @@ public class Manager {
         return groupManagement.getAddresses(group);
     }
 
-    public void leaveGroup(ChatGroup group) {
+    public void leaveGroup(String groupName) {
         GroupMembership g = GroupMembership.newBuilder()
-                .setGroupId(group.getId())
+                .setGroupId(groupName)
                 .setSenderId(groupManagement.getAddress())
                 .setJoining(false)
                 .setMessageId("1")
                 .build();
         Message m = Message.newBuilder().setGroupMembership(g).build();
-        ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(group.getName()));
-        groupManagement.leaveGroup(group.getId());
+        ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(groupName));
+        groupManagement.leaveGroup(groupName);
         addresses.remove(groupManagement.getAddress());
         System.out.println("Sending Leave to:" + addresses);
         communicationService.multicast(m, addresses);
@@ -204,5 +204,12 @@ public class Manager {
 
     public DebugMonitor getDebugMonitor() {
         return debugMonitor;
+    }
+
+    public void leaveAllGroups(){
+        List<String> groupNames = groupManagement.getGroupNames();
+        for (String groupName : groupNames){
+            leaveGroup(groupName);
+        }
     }
 }
