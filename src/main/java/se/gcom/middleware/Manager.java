@@ -45,6 +45,10 @@ public class Manager {
         );
     }
 
+    public String getMyAddress() {
+        return myAddress;
+    }
+
     private String generateMessageId() {
         return groupManagement.getAddress() + "--" + (++messageCounter);
     }

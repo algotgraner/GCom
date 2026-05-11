@@ -126,8 +126,12 @@ public class ChatView {
         groups.getSelectionModel().selectFirst();
         showMessages(groups.getSelectionModel().getSelectedItem());
         updateSelectedGroupHeader(groups.getSelectionModel().getSelectedItem());
-
-        VBox leftPane = new VBox(10, titleBar, groups);
+        Label titleText = new Label("My Address:");
+        Label bottomText = new Label(chatController.getAddress());
+        VBox bottomBox = new VBox(2, titleText, bottomText);
+        bottomBox.setAlignment(Pos.CENTER);
+        bottomBox.setPadding(new Insets(5, 5, 10, 5));
+        VBox leftPane = new VBox(10, titleBar, groups, bottomBox);
         leftPane.setPadding(new Insets(0, 12, 0, 0));
         leftPane.setPrefWidth(260);
         VBox.setVgrow(groups, Priority.ALWAYS);
