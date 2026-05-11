@@ -23,6 +23,10 @@ public class VectorClock {
         });
     }
 
+    public void setValue(String process, int value) {
+        clock.put(process, value);
+    }
+
     public boolean canDeliver(Map<String, Integer> incomingClock, String senderID){
         // this function will have to compare the clocks,
         // this function should only be called for casual ordering
@@ -71,4 +75,3 @@ public class VectorClock {
         return clock.toString();
     }
 }
-

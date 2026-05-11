@@ -1,6 +1,5 @@
 package se.gcom.app.view;
 
-import javafx.collections.FXCollections;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import javafx.collections.ListChangeListener;
@@ -20,7 +19,6 @@ import se.gcom.app.controller.DebugController;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.app.model.ChatMessage;
 
-import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -98,6 +96,13 @@ public class ChatView {
 
     private void leaveGroupAction() {
         chatController.leaveGroup();
+        if (chatController.getGroups().isEmpty()) {
+            groups.getSelectionModel().clearSelection();
+            showMessages(null);
+            updateSelectedGroupHeader(null);
+        } else {
+            groups.getSelectionModel().selectFirst();
+        }
     }
 
     private VBox createLeftPane() {
@@ -123,9 +128,12 @@ public class ChatView {
             updateSelectedGroupHeader(newGroup);
         });
 
-        groups.getSelectionModel().selectFirst();
-        showMessages(groups.getSelectionModel().getSelectedItem());
-        updateSelectedGroupHeader(groups.getSelectionModel().getSelectedItem());
+        if (!chatController.getGroups().isEmpty()) {
+            groups.getSelectionModel().selectFirst();
+        } else {
+            showMessages(null);
+            updateSelectedGroupHeader(null);
+        }
         Label titleText = new Label("My Address:");
         Label bottomText = new Label(chatController.getAddress());
         VBox bottomBox = new VBox(2, titleText, bottomText);
@@ -423,6 +431,9 @@ public class ChatView {
     private void updateSelectedGroupHeader(ChatGroup group) {
         selectedGroupTitle.setText(group == null ? "" : group.getName());
         addUserButton.setDisable(group == null);
+        leaveGroupButton.setDisable(group == null);
+        inputField.setDisable(group == null);
+        sendButton.setDisable(group == null);
     }
 
     private void showMessages(ChatGroup group) {
@@ -440,6 +451,9 @@ public class ChatView {
     private void renderMessages() {
         messagesBox.getChildren().clear();
         if (visibleMessages == null) {
+            Label emptyLabel = new Label("No groups. Create or join a group to start chatting.");
+            emptyLabel.setStyle("-fx-opacity: 0.75;");
+            messagesBox.getChildren().add(emptyLabel);
             return;
         }
 
