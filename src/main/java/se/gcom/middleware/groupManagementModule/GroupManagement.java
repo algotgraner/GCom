@@ -37,11 +37,12 @@ public class GroupManagement {
         return new ArrayList<>(addresses);
     }
     public void createNewGroup(String groupName, ArrayList<String> addresses){
-        groupAddressMap.put(groupName, addresses);
+        // need to include our own address
         addresses.add(this.address);
         if(namingServerIsUp) {
             namingServerCommunication.createNewGroup(groupName, addresses);
         }
+        groupAddressMap.put(groupName, addresses);
     }
 
     public ArrayList<String> joinGroup(String groupName) throws StatusRuntimeException {
