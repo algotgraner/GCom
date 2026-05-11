@@ -1,5 +1,7 @@
 package se.gcom.app.view;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -285,14 +287,24 @@ public class ChatView {
     }
 
     private void createGroup(GroupInput groupInput) {
-        ChatGroup group = chatController.createGroup(
-                groupInput.groupName(),
-                groupInput.causalOrdering(),
-                true
-        );
-        if (group != null) {
-            groups.getSelectionModel().select(group);
-            chatController.setGroupOrdering(groupInput.groupName, groupInput.causalOrdering);
+        try {
+            ChatGroup group = chatController.createGroup(
+                    groupInput.groupName(),
+                    groupInput.causalOrdering(),
+                    true
+            );
+            if (group != null) {
+                groups.getSelectionModel().select(group);
+                chatController.setGroupOrdering(groupInput.groupName, groupInput.causalOrdering);
+            }
+        } catch (StatusRuntimeException e){
+            Status.Code code = e.getStatus().getCode();
+            if (code == Status.Code.ALREADY_EXISTS) {
+                showErrorAlert("Group Already Exists",
+                        "A group with the name \"" + groupInput.groupName() + "\" already exists.\nPlease choose another name.");
+            } else {
+                showErrorAlert("Error", "Something went wrong :(");
+            }
         }
     }
 
@@ -421,6 +433,14 @@ public class ChatView {
         row.setAlignment(Pos.CENTER_RIGHT);
 
         return row;
+    }
+
+    private void showErrorAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
     private void openDebugWindow() {
