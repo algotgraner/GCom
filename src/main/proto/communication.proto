@@ -45,6 +45,7 @@ message MembershipAck {
   bool isCausal = 4;
   bool isStatic = 5;
   repeated string staticMembers = 6;
+  bool canJoinStaticGroup = 7;
 }
 
 message DataAck { }

@@ -3,11 +3,7 @@ package se.gcom.middleware.communicationModule;
 import io.grpc.stub.StreamObserver;
 import se.gcom.middleware.Manager;
 
-import java.util.Map;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class CommunicationGrpcHandler extends CommunicationServiceGrpc.CommunicationServiceImplBase {
 
@@ -57,9 +53,16 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                     }
 
                     if(manager.isStaticGroup(groupMembership.getGroupId())){
-                        membershipAckBuilder.setIsStatic(true);
-                        membershipAckBuilder.addAllStaticMembers(manager.getStaticGroupMembers(groupMembership.getGroupId()));
-                        System.out.println("Sending static members:" + manager.getStaticGroupMembers(groupMembership.getGroupId()));
+                        if(manager.canJoinStaticGroup(groupMembership.getGroupId(), groupMembership.getSenderId())) {
+                            membershipAckBuilder.setIsStatic(true);
+                            membershipAckBuilder.setCanJoinStaticGroup(true);
+                            membershipAckBuilder.addAllStaticMembers(new ArrayList<>(manager.getStaticGroupMembers(groupMembership.getGroupId())));
+                            System.out.println("Sending static members:" + manager.getStaticGroupMembers(groupMembership.getGroupId()));
+                        } else  {
+                            membershipAckBuilder.setIsStatic(true);
+                            membershipAckBuilder.setCanJoinStaticGroup(false);
+                        }
+                        manager.canStartSendingMessagesCheck(groupMembership.getGroupId());
                     }
 
                     MembershipAck membershipAck = membershipAckBuilder.build();

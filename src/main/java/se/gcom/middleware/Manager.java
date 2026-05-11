@@ -77,12 +77,11 @@ public class Manager {
 
     public void deliverIncomingMessage(GroupMembership msg) {
         if (msg.getJoining()) {
-            groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
-            orderingModule.addMemberToVectorClock(msg.getGroupId(), msg.getSenderId());
-            if(groupManagement.isStaticGroup(msg.getGroupId()) && groupManagement.canStartSendingMessages(msg.getGroupId())) {
-                groupManagement.addCanSendMessages(msg.getGroupId());
+            if(!groupManagement.isStaticGroup(msg.getGroupId()) || groupManagement.canJoinStaticGroup(msg.getGroupId(), msg.getSenderId())) {
+                groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+                orderingModule.addMemberToVectorClock(msg.getGroupId(), msg.getSenderId());
+                System.out.println("Received join message");
             }
-            System.out.println("Received join message");
         } else {
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
             System.out.println("Received remove message");
@@ -135,28 +134,34 @@ public class Manager {
         if (ack.getSuccess() && ack.hasMembership()){
             MembershipAck membershipAck = ack.getMembership();
             System.out.println("Got membership ack with VC: " + membershipAck.getVectorClockMap());
-            OrderingModule.OrderingType groupType;
-            if (membershipAck.getIsCausal()){
-                groupType = OrderingModule.OrderingType.CAUSAL;
-            } else {
-                groupType = OrderingModule.OrderingType.UNORDERED;
-            }
-            orderingModule.setUpGroup(name, groupType);
-            // join the group with the vector clock we
-            orderingModule.joinGroup(name, membershipAck.getVectorClockMap());
-            if(membershipAck.getIsStatic()){
-                System.out.println("Here are the members of the static group: " + membershipAck.getMembersList());
-                groupManagement.addStaticGroup(name, new ArrayList<>(membershipAck.getStaticMembersList()));
-                if(groupManagement.canStartSendingMessages(name)){
-                    groupManagement.addCanSendMessages(name);
+            System.out.println("Can join group? " + membershipAck.getCanJoinStaticGroup());
+            if(!membershipAck.getIsStatic() || membershipAck.getCanJoinStaticGroup()) {;
+                OrderingModule.OrderingType groupType;
+                if (membershipAck.getIsCausal()) {
+                    groupType = OrderingModule.OrderingType.CAUSAL;
+                } else {
+                    groupType = OrderingModule.OrderingType.UNORDERED;
                 }
-            }
-            if(!namingServerIsUp()){
-                ArrayList<String> newAddresses =  new ArrayList<>(membershipAck.getMembersList());
-                groupManagement.joinGroup(name,newAddresses);
-                newAddresses.remove(ip);
-                newAddresses.remove(myAddress);
-                communicationService.multicast(m, newAddresses);
+                orderingModule.setUpGroup(name, groupType);
+                // join the group with the vector clock we
+                orderingModule.joinGroup(name, membershipAck.getVectorClockMap());
+                if (!namingServerIsUp()) {
+                    ArrayList<String> newAddresses = new ArrayList<>(membershipAck.getMembersList());
+                    groupManagement.joinGroup(name, newAddresses);
+                    newAddresses.remove(ip);
+                    newAddresses.remove(myAddress);
+                    communicationService.multicast(m, newAddresses);
+                }
+                if (membershipAck.getIsStatic()) {
+                    if (membershipAck.getCanJoinStaticGroup()) {
+                        groupManagement.addStaticGroup(name, new ArrayList<>(membershipAck.getStaticMembersList()));
+                        if (groupManagement.canStartSendingMessages(name)) {
+                            groupManagement.addCanSendMessages(name);
+                        }
+                    }
+                }
+            } else {
+                groupManagement.leaveGroup(name);
             }
         }
     }
@@ -200,5 +205,14 @@ public class Manager {
 
     public ArrayList<String> getStaticGroupMembers(String groupName) {
         return groupManagement.getStaticGroupMembers(groupName);
+    }
+
+    public boolean canJoinStaticGroup(String group, String address){
+        return groupManagement.canJoinStaticGroup(group, address);
+    }
+    public void canStartSendingMessagesCheck(String group){
+        if (groupManagement.canStartSendingMessages(group)) {
+            groupManagement.addCanSendMessages(group);
+        }
     }
 }

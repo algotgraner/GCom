@@ -112,12 +112,19 @@ public class GroupManagement {
     }
     public void addCanSendMessages(String group){
         canSendMessages.add(group);
+        staticGroupMembers.get(group).clear();
     }
 
     public boolean canSendMessages(String group){
         System.out.println("Current Members:" + groupAddressMap.get(group));
         System.out.println("Expected Members:" + staticGroupMembers.get(group));
         return canSendMessages.contains(group);
+    }
+
+    public boolean canJoinStaticGroup(String group, String address){
+        System.out.println(address + "wants to join group " + group);
+        System.out.println("Static Members:" + staticGroupMembers.get(group));
+        return staticGroupMembers.get(group).contains(address);
     }
 
     public void shutdown(){
