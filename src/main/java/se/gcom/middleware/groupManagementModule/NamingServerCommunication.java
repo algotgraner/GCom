@@ -20,16 +20,12 @@ public class NamingServerCommunication {
     }
 
     public void createNewGroup(String groupName, ArrayList<String> addresses){
-        try {
             stub.addNewGroup(
                     AddGroupRequest.newBuilder()
                             .setGroupName(groupName)
                             .addAllAddresses(addresses)
                             .build()
             );
-        } catch (StatusRuntimeException e){
-            System.out.println(e.getMessage());
-        }
     }
     public void addToGroup(String groupName, String address){
         try {

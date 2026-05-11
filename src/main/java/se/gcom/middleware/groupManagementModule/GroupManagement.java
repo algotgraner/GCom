@@ -38,12 +38,18 @@ public class GroupManagement {
         }
         return new ArrayList<>(addresses);
     }
+
+    public List<String> getGroupNames(){
+        return new ArrayList<>(groupAddressMap.keySet());
+    }
+
     public void createNewGroup(String groupName, ArrayList<String> addresses){
-        groupAddressMap.put(groupName, addresses);
+        // need to include our own address
         addresses.add(this.address);
         if(namingServerIsUp) {
             namingServerCommunication.createNewGroup(groupName, addresses);
         }
+        groupAddressMap.put(groupName, addresses);
     }
 
     public void createNewStaticGroup(String groupName, ArrayList<String> groupMembers){

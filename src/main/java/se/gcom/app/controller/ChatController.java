@@ -49,9 +49,6 @@ public class ChatController {
         }
 
         String trimmedName = name.trim();
-        ChatGroup group = new ChatGroup(createGroupId(trimmedName), trimmedName);
-        groups.add(group);
-        selectedGroup = group;
 
         if (manager != null) {
             if (staticGroup) {
@@ -61,6 +58,10 @@ public class ChatController {
             }
             manager.addGroupToReliablePairing(trimmedName, reliable);
         }
+        ChatGroup group = new ChatGroup(createGroupId(trimmedName), trimmedName);
+        groups.add(group);
+        selectedGroup = group;
+
 
         return group;
     }
@@ -158,7 +159,7 @@ public class ChatController {
 
     public void leaveGroup() {
         ChatGroup group = selectedGroup;
-        manager.leaveGroup(group);
+        manager.leaveGroup(group.getName());
         groups.remove(group);
     }
 

@@ -1,6 +1,8 @@
 package se.gcom.app.view;
 
 import javafx.collections.FXCollections;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -14,6 +16,7 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import se.gcom.app.controller.ChatController;
+import se.gcom.app.controller.DebugController;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.app.model.ChatMessage;
 
@@ -25,6 +28,7 @@ import java.util.Optional;
 public class ChatView {
     private final BorderPane root;
     private final ChatController chatController;
+    private final DebugController debugController;
     private final ListView<ChatGroup> groups = new ListView<>();
     private final VBox messagesBox = new VBox(10);
     private final TextField inputField = new TextField();
@@ -37,8 +41,9 @@ public class ChatView {
     private ObservableList<ChatMessage> visibleMessages;
     private final ListChangeListener<ChatMessage> messageListener = change -> renderMessages();
 
-    public ChatView(ChatController chatController) {
+    public ChatView(ChatController chatController, DebugController debugController) {
         this.chatController = chatController;
+        this.debugController = debugController;
         this.root = new BorderPane();
         createLayout();
         setupActions();
@@ -315,16 +320,26 @@ public class ChatView {
     }
 
     private void createGroup(GroupInput groupInput) {
-        ChatGroup group = chatController.createGroup(
-                groupInput.groupName(),
-                groupInput.causalOrdering(),
-                true,
-                groupInput.staticGroup(),
-                groupInput.ipAddresses
-        );
-        if (group != null) {
-            groups.getSelectionModel().select(group);
-            chatController.setGroupOrdering(groupInput.groupName, groupInput.causalOrdering);
+        try {
+            ChatGroup group = chatController.createGroup(
+                    groupInput.groupName(),
+                    groupInput.causalOrdering(),
+                    true,
+                    groupInput.staticGroup(),
+                    groupInput.ipAddresses
+            );
+            if (group != null) {
+                groups.getSelectionModel().select(group);
+                chatController.setGroupOrdering(groupInput.groupName, groupInput.causalOrdering);
+            }
+        }catch (StatusRuntimeException e){
+            Status.Code code = e.getStatus().getCode();
+            if (code == Status.Code.ALREADY_EXISTS) {
+                showErrorAlert("Group Already Exists",
+                        "A group with the name \"" + groupInput.groupName() + "\" already exists.\nPlease choose another name.");
+            } else {
+                showErrorAlert("Error", "Something went wrong :(");
+            }
         }
     }
 
@@ -455,8 +470,16 @@ public class ChatView {
         return row;
     }
 
+    private void showErrorAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
     private void openDebugWindow() {
-        DebugView debugView = new DebugView();
+        DebugView debugView = new DebugView(debugController);
 
         Stage debugStage = new Stage();
         debugStage.setTitle("Debug View");

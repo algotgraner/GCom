@@ -10,19 +10,19 @@ import se.gcom.app.view.ChatView;
 import se.gcom.middleware.Manager;
 
 public class App extends Application {
-
+    private Manager manager;
     @Override
     public void start(Stage Stage) {
         Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
         ChatController chatController = new ChatController();
         DebugController debugController = new DebugController();
-        Manager manager = new Manager(chatController, debugController);
+        this.manager = new Manager(chatController, debugController);
 
         chatController.setManager(manager);
         debugController.setManager(manager);
 
-        ChatView chatView = new ChatView(chatController);
+        ChatView chatView = new ChatView(chatController, debugController);
 
         manager.start();
 
@@ -30,6 +30,16 @@ public class App extends Application {
         Stage.setScene(new Scene(chatView.getRoot(), 900, 600));
         Stage.show();
     }
+
+    @Override
+    public void stop() throws Exception {
+        System.out.println("shutting down...");
+        if(manager != null){
+            manager.leaveAllGroups();
+        }
+        super.stop();
+    }
+
 
     public static void main(String[] args) {
         launch(args);

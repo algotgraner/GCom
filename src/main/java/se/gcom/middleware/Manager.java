@@ -3,6 +3,8 @@ package se.gcom.middleware;
 import io.grpc.StatusRuntimeException;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
+import se.gcom.app.debug.DebugEventType;
+import se.gcom.app.debug.DebugMonitor;
 import se.gcom.app.model.ChatGroup;
 import se.gcom.middleware.communicationModule.*;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
@@ -19,6 +21,7 @@ public class Manager {
     OrderingModule orderingModule;
     String myAddress;
     private long messageCounter;
+    private final DebugMonitor debugMonitor = new DebugMonitor();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -34,6 +37,11 @@ public class Manager {
         this.groupManagement = new GroupManagement(port);
         this.myAddress = groupManagement.getAddress();
         this.orderingModule = new OrderingModule(this, myAddress);
+        debugMonitor.recordEvent(
+                DebugEventType.PROCESS_STARTED,
+                myAddress,
+                "Communication service started on port " + port
+        );
     }
 
     private String generateMessageId() {
@@ -43,13 +51,21 @@ public class Manager {
     public void sendMessage(String groupName, String message){
         List<String> addresses = groupManagement.getAddresses(groupName);
         // Create the message
+
+        String messageId = generateMessageId();
         ChatMessage msg = ChatMessage.newBuilder()
-                        .setMessageId(generateMessageId())
+                        .setMessageId(messageId)
                         .setSenderId(groupManagement.getAddress())
                         .setGroupId(groupName)
                         .setPayload(message)
                         .build();
+
         if(!groupManagement.isStaticGroup(groupName) || groupManagement.canSendMessages(groupName)){
+            debugMonitor.recordEvent(
+                    DebugEventType.MESSAGE_CREATED,
+                    myAddress,
+                    "Created message " + messageId + " in group " + groupName + ": " + message
+            );
             // let ordering module append the vector clock if needed
             ChatMessage finalMsg = orderingModule.handleOutgoingMessage(msg, msg.getGroupId());
             Message m = Message.newBuilder().setChatMessage(finalMsg).build();
@@ -73,6 +89,14 @@ public class Manager {
     public void deliverIncomingMessage(ChatMessage msg){
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
         chatController.receiveMessage(msg.getSenderId(), msg.getGroupId(), msg.getPayload(), outgoing);
+        debugMonitor.recordEvent(
+                DebugEventType.MESSAGE_DELIVERED,
+                myAddress,
+                "Delivered message " + msg.getMessageId()
+                        + " from " + msg.getSenderId()
+                        + " in group " + msg.getGroupId()
+                        + ": " + msg.getPayload()
+        );
     }
 
     public void deliverIncomingMessage(GroupMembership msg) {
@@ -84,7 +108,7 @@ public class Manager {
             }
         } else {
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
-            System.out.println("Received remove message");
+            System.out.println("Received leave message");
         }
     }
 
@@ -173,16 +197,16 @@ public class Manager {
         return groupManagement.getAddresses(group);
     }
 
-    public void leaveGroup(ChatGroup group) {
+    public void leaveGroup(String groupName) {
         GroupMembership g = GroupMembership.newBuilder()
-                .setGroupId(group.getId())
+                .setGroupId(groupName)
                 .setSenderId(groupManagement.getAddress())
                 .setJoining(false)
                 .setMessageId("1")
                 .build();
         Message m = Message.newBuilder().setGroupMembership(g).build();
-        ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(group.getName()));
-        groupManagement.leaveGroup(group.getId());
+        ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(groupName));
+        groupManagement.leaveGroup(groupName);
         addresses.remove(groupManagement.getAddress());
         System.out.println("Sending Leave to:" + addresses);
         communicationService.multicast(m, addresses);
@@ -213,6 +237,17 @@ public class Manager {
     public void canStartSendingMessagesCheck(String group){
         if (groupManagement.canStartSendingMessages(group)) {
             groupManagement.addCanSendMessages(group);
+        }
+    }
+
+    public DebugMonitor getDebugMonitor() {
+        return debugMonitor;
+    }
+
+    public void leaveAllGroups(){
+        List<String> groupNames = groupManagement.getGroupNames();
+        for (String groupName : groupNames){
+            leaveGroup(groupName);
         }
     }
 }
