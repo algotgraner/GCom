@@ -1,5 +1,6 @@
 package se.gcom.middleware;
 
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
@@ -186,6 +187,7 @@ public class Manager {
                 }
             } else {
                 groupManagement.leaveGroup(name);
+                throw new StatusRuntimeException(Status.PERMISSION_DENIED.withDescription("You are not allowed to join this group"));
             }
         }
     }

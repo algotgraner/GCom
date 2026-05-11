@@ -313,9 +313,19 @@ public class ChatView {
     }
 
     private void joinGroup(String name, String ip){
-        ChatGroup group = chatController.joinGroup(name, ip);
-        if (group != null) {
-            groups.getSelectionModel().select(group);
+        try {
+            ChatGroup group = chatController.joinGroup(name, ip);
+            if (group != null) {
+                groups.getSelectionModel().select(group);
+            }
+        }catch (StatusRuntimeException e){
+            Status.Code code = e.getStatus().getCode();
+            if (code == Status.Code.PERMISSION_DENIED) {
+                showErrorAlert("Can not join group",
+                        "You do not have access to this group");
+            } else {
+                showErrorAlert("Error", "Something went wrong :(");
+            }
         }
     }
 

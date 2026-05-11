@@ -137,13 +137,13 @@ public class ChatController {
             return existingGroup;
         }
 
-        ChatGroup group = new ChatGroup(trimmedName, trimmedName);
-        groups.add(group);
-        selectedGroup = group;
 
         if (manager != null) {
             manager.joinGroup(trimmedName, ip);
         }
+        ChatGroup group = new ChatGroup(trimmedName, trimmedName);
+        groups.add(group);
+        selectedGroup = group;
 
         return group;
     }
