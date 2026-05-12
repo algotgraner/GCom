@@ -11,10 +11,12 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.converter.IntegerStringConverter;
 import se.gcom.app.controller.DebugController;
 import se.gcom.app.debug.DebugEvent;
+import se.gcom.middleware.communicationModule.ChatMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,7 @@ public class DebugOrdering extends VBox {
     private final DebugController controller;
     private final ComboBox<String> groupSelector = new ComboBox<>();
     private final TableView<Map.Entry<String, Integer>> clockTable = new TableView<>();
+    private final TableView<ChatMessage> holdbackQueueTable = new TableView<>();
     private final ListChangeListener<DebugEvent> eventListener = change -> refresh();
 
     public DebugOrdering(DebugController controller) {
@@ -61,7 +64,23 @@ public class DebugOrdering extends VBox {
         clockTable.getColumns().addAll(processColumn, clockColumn);
         clockTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
-        getChildren().addAll(title, controls, new Label("Current clock"), clockTable);
+        TableColumn<ChatMessage, String> messageIdColumn = new TableColumn<>("Id");
+        messageIdColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getMessageId()));
+
+        TableColumn<ChatMessage, String> messageColumn = new TableColumn<>("Message");
+        messageColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getPayload()));
+
+        TableColumn<ChatMessage, String> vectorClockColumn = new TableColumn<>("Vector clock");
+        vectorClockColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getVectorClockMap().toString()));
+
+        holdbackQueueTable.getColumns().addAll(messageColumn, messageIdColumn, vectorClockColumn);
+        holdbackQueueTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        holdbackQueueTable.setPlaceholder(new Label("No held-back messages"));
+
+        VBox.setVgrow(clockTable, Priority.ALWAYS);
+        VBox.setVgrow(holdbackQueueTable, Priority.ALWAYS);
+
+        getChildren().addAll(title, controls, new Label("Current clock"), clockTable, new Label("Holdback Queue"), holdbackQueueTable);
     }
 
     private void setupActions() {
@@ -94,5 +113,6 @@ public class DebugOrdering extends VBox {
                         .toList()
         ));
 
+        holdbackQueueTable.setItems(FXCollections.observableArrayList(controller.getHoldbackQueue(group)));
     }
 }

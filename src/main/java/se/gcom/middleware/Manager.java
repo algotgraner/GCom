@@ -230,6 +230,10 @@ public class Manager {
         orderingModule.setVectorClockValue(groupName, process, value);
     }
 
+    public List<ChatMessage> getHoldbackQueue(String groupName) {
+        return orderingModule.getHoldbackQueue(groupName);
+    }
+
     public Boolean orderingIsCausal(String groupName){
         return orderingModule.orderingIsCausal(groupName);
     }
