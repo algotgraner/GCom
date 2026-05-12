@@ -113,6 +113,7 @@ public class Manager {
             }
         } else {
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
+            orderingModule.leaveGroup(msg.getGroupId(), msg.getSenderId());
             System.out.println("Received leave message");
         }
     }
@@ -219,7 +220,7 @@ public class Manager {
                 .build();
         Message m = Message.newBuilder().setGroupMembership(g).build();
         ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(groupName));
-        orderingModule.leaveGroup(groupName);
+        orderingModule.removeGroup(groupName);
         groupManagement.leaveGroup(groupName);
         addresses.remove(groupManagement.getAddress());
         System.out.println("Sending Leave to:" + addresses);
