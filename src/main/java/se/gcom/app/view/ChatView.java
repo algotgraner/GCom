@@ -524,7 +524,7 @@ public class ChatView {
 
         Stage debugStage = new Stage();
         debugStage.setTitle("Debug View");
-        debugStage.setScene(new Scene(debugView, 1600, 1000));
+        debugStage.setScene(new Scene(debugView, 1200, 800));
         debugStage.show();
     }
 
