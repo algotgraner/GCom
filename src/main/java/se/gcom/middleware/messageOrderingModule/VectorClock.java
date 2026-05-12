@@ -66,6 +66,12 @@ public class VectorClock {
 
         return true;
     }
+    public void removeProcess(String address) {
+        // dont remove my own
+        if (address != null && !address.equals(myAddress)) {
+            clock.remove(address);
+        }
+    }
 
     public Map<String, Integer> attachClock(){
         return new ConcurrentHashMap<>(clock);

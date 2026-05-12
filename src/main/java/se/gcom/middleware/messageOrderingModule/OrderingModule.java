@@ -59,6 +59,26 @@ public class OrderingModule {
         }
     }
 
+    public void leaveGroup(String groupName, String leavingMemberAddress) {
+
+        VectorClock vc = vectorClockMap.get(groupName);
+        vc.removeProcess(leavingMemberAddress);
+        System.out.println("[Ordering] Member left: " + leavingMemberAddress
+                + " from group " + groupName + " → Updated VC: " + vc);
+
+        recordVectorClock(groupName, "member " + leavingMemberAddress + " left", vc.attachClock());
+    }
+
+    public void removeGroup (String groupName) {
+        groupOrdering.remove(groupName);
+        vectorClockMap.remove(groupName);
+        Queue<ChatMessage> queue = holdbackQueue.remove(groupName);
+        int remaining = queue.size();
+        System.out.println("Leaving group with " + remaining + "messages in the holdback queue!");
+    }
+
+
+
     public ChatMessage handleOutgoingMessage(ChatMessage msg, String groupName){
         OrderingType type = groupOrdering.getOrDefault(groupName, OrderingType.UNORDERED);
         if (type == OrderingType.UNORDERED) {
@@ -167,9 +187,13 @@ public class OrderingModule {
 
     public Map<String, Integer> getVectorClock(String groupName) {
         VectorClock vc = vectorClockMap.get(groupName);
+        System.out.println("Get vector clock");
         if (vc != null) {
-            return vc.attachClock();
-        }
+            Map<String, Integer> clock = vc.attachClock();
+
+            System.out.println(clock);
+
+            return clock;        }
         System.out.println("No vector clock for group: " + groupName);
         return new ConcurrentHashMap<>();
     }
