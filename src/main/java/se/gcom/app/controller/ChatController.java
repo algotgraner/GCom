@@ -9,6 +9,9 @@ import se.gcom.middleware.Manager;
 import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
 import java.util.ArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChatController {
 
@@ -21,6 +24,12 @@ public class ChatController {
 
     public ChatController() {
     }
+
+    private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "message-send-thread");
+        t.setDaemon(true);
+        return t;
+    });
 
     public void setManager(Manager manager) {
         this.manager = manager;
@@ -66,8 +75,11 @@ public class ChatController {
             return;
         }
 
+        String groupId = selectedGroup.getId();
+        String messageText = text;
+
         if (manager != null) {
-            manager.sendMessage(selectedGroup.getId(), text);
+            sendExecutor.submit(() -> manager.sendMessage(groupId, messageText));
         }
     }
 
@@ -180,4 +192,9 @@ public class ChatController {
     public String getAddress(){
         return manager.getMyAddress();
     }
+
+    public Boolean namingServerIsUp(){
+        return manager.namingServerIsUp();
+    }
 }
+

@@ -40,6 +40,18 @@ public class DebugController {
         manager.removeMember(groupName, address);
     }
 
+    public void setMemberEnabled(String groupName, String address, boolean enabled) {
+        if (manager == null || groupName == null || address == null) {
+            return;
+        }
+
+        if (enabled) {
+            manager.addMember(groupName, address);
+        } else {
+            manager.removeMember(groupName, address);
+        }
+    }
+
     public Map<String, Integer> getCurrentVectorClock(String groupName) {
         if (manager == null || groupName == null || groupName.isBlank()) {
             return Collections.emptyMap();

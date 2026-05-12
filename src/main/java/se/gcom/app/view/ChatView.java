@@ -314,7 +314,9 @@ public class ChatView {
         content.setVgap(10);
         content.setPadding(new Insets(8, 0, 0, 0));
         content.addRow(0, new Label("Group name"), groupNameField);
-        content.addRow(1, new Label("IP address"), ipField);
+        if (!chatController.namingServerIsUp()) {
+            content.addRow(1, new Label("IP address"), ipField);
+        }
         dialog.getDialogPane().setContent(content);
 
         dialog.setResultConverter(button -> {
