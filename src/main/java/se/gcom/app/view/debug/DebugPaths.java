@@ -9,6 +9,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import se.gcom.app.controller.DebugController;
@@ -43,7 +44,7 @@ public class DebugPaths extends VBox {
 
         HBox controls = new HBox(8, groupSelector);
 
-        Label membersLabel = new Label("Remove Connection:");
+        Label membersLabel = new Label("Messages:");
 
         memberSelector.setPromptText("Message");
 
@@ -85,14 +86,20 @@ public class DebugPaths extends VBox {
     private void displayPaths(){
         String message = memberSelector.getValue();
         ArrayList<ArrayList<String>> paths = controller.getPaths(message);
+        if (paths == null || paths.isEmpty()) {
+            return;
+        }
+        canvas.getChildren().clear();
+        int i = 1;
         for (ArrayList<String> path : paths) {
-            renderPath(path);
+            renderPath(path, i);
+            i++;
+            System.out.println("Path " + i + " " + path);
         }
     }
-    private void renderPath(List<String> path) {
-        canvas.getChildren().clear();
+    private void renderPath(List<String> path, int i) {
 
-        double x = 50;
+        double x = 50 * i;
         double y = 50;
 
         Circle prev = null;
@@ -100,6 +107,9 @@ public class DebugPaths extends VBox {
         for (String node : path) {
 
             Circle c = new Circle(x, y, 15);
+            c.setFill(javafx.scene.paint.Color.CORNFLOWERBLUE);
+            c.setStroke(Color.WHITE);
+            c.setStrokeWidth(2);
             Label label = new Label(node);
 
             label.setLayoutX(x - 10);
@@ -112,8 +122,11 @@ public class DebugPaths extends VBox {
                         prev.getCenterX(), prev.getCenterY(),
                         x, y
                 );
+                line.setStroke(Color.WHITE);
+                line.setStrokeWidth(2);
                 canvas.getChildren().add(line);
             }
+
 
             prev = c;
             y += 70; // vertical spacing

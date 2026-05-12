@@ -25,6 +25,7 @@ public class Manager {
     private long messageCounter;
     private final DebugMonitor debugMonitor = new DebugMonitor();
     private HashMap<String , ArrayList<ArrayList<String>>> messageToPathMap = new HashMap<>();
+    private HashMap<String, ArrayList<String>> groupToMessageMap = new HashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -81,6 +82,10 @@ public class Manager {
             System.out.println("Sending to" + addresses);
             // let communication module send the message
             communicationService.multicast(m, addresses);
+            if(!groupToMessageMap.containsKey(groupName)){
+                groupToMessageMap.put(groupName, new ArrayList<>());
+            }
+            groupToMessageMap.get(groupName).add(messageId);
         }
     }
 
@@ -287,13 +292,21 @@ public class Manager {
         if (!messageToPathMap.containsKey(messageId)){
             messageToPathMap.put(messageId, new ArrayList<>());
         }
+        for(int i = 0; i < messageToPathMap.get(messageId).size(); i++){
+            ArrayList<String> existingPath = messageToPathMap.get(messageId).get(i);
+            if(path.getLast().equals(existingPath.getLast())){
+                if(existingPath.size() >= path.size()){
+                    messageToPathMap.get(messageId).set(i, path);
+                    return;
+                }
+            }
+        }
         messageToPathMap.get(messageId).add(path);
-        System.out.println("Message ID: " + messageId + "  Path: " + path);
     }
     public ArrayList<ArrayList<String>> getPaths(String messageId){
         return messageToPathMap.get(messageId);
     }
     public ArrayList<String> getMessages(String groupName){
-        return new ArrayList<>(messageToPathMap.keySet());
+        return groupToMessageMap.get(groupName);
     }
 }
