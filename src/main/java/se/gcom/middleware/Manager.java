@@ -219,6 +219,7 @@ public class Manager {
                 .build();
         Message m = Message.newBuilder().setGroupMembership(g).build();
         ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(groupName));
+        orderingModule.leaveGroup(groupName);
         groupManagement.leaveGroup(groupName);
         addresses.remove(groupManagement.getAddress());
         System.out.println("Sending Leave to:" + addresses);

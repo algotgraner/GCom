@@ -59,6 +59,14 @@ public class OrderingModule {
         }
     }
 
+    public void leaveGroup (String groupName) {
+        groupOrdering.remove(groupName);
+        vectorClockMap.remove(groupName);
+        Queue<ChatMessage> queue = holdbackQueue.remove(groupName);
+        int remaining = queue.size();
+        System.out.println("Leaving group with " + remaining + "messages in the holdback queue!");
+    }
+
     public ChatMessage handleOutgoingMessage(ChatMessage msg, String groupName){
         OrderingType type = groupOrdering.getOrDefault(groupName, OrderingType.UNORDERED);
         if (type == OrderingType.UNORDERED) {
