@@ -22,6 +22,9 @@ public class CommunicationGrpcSender {
         Ack latestAck = null;
         for (String address : addresses) {
             latestAck = sendToNode(address, msg);
+            if (latestAck.hasData()){
+                ///
+            }
 
         }
         return latestAck;

@@ -12,6 +12,7 @@ import se.gcom.middleware.groupManagementModule.GroupManagement;
 import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ public class Manager {
     String myAddress;
     private long messageCounter;
     private final DebugMonitor debugMonitor = new DebugMonitor();
+    private HashMap<String , ArrayList<ArrayList<String>>> messageToPathMap = new HashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -63,6 +65,7 @@ public class Manager {
                         .setSenderId(groupManagement.getAddress())
                         .setGroupId(groupName)
                         .setPayload(message)
+                        .addPath(this.myAddress)
                         .build();
 
         if(!groupManagement.isStaticGroup(groupName) || groupManagement.canSendMessages(groupName)){
@@ -89,6 +92,10 @@ public class Manager {
             addresses.remove(msg.getSenderId());
             communicationService.multicast(m, addresses);
         }
+    }
+
+    public void sendAck(Message msg, String ipAddress){
+        communicationService.multicast(msg, new ArrayList<>(List.of(ipAddress)));
     }
 
     public void deliverIncomingMessage(ChatMessage msg){
@@ -274,5 +281,16 @@ public class Manager {
 
     public void removeMember(String groupName, String address) {
         groupManagement.removeMember(groupName, address);
+    }
+
+    public void receivePath(ArrayList<String> path, String messageId){
+        if (!messageToPathMap.containsKey(messageId)){
+            messageToPathMap.put(messageId, new ArrayList<>());
+        }
+        messageToPathMap.get(messageId).add(path);
+        System.out.println("Message ID: " + messageId + "  Path: " + path);
+    }
+    public ArrayList<ArrayList<String>> getPaths(String messageId){
+        return messageToPathMap.get(messageId);
     }
 }
