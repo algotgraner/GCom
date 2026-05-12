@@ -6,6 +6,7 @@ import se.gcom.middleware.communicationModule.ChatMessage;
 import se.gcom.middleware.communicationModule.Message;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -181,6 +182,15 @@ public class OrderingModule {
 
         vc.setValue(process, value);
         recordVectorClock(groupName, "edited", vc.attachClock());
+    }
+
+    public List<ChatMessage> getHoldbackQueue(String groupName) {
+        Queue<ChatMessage> queue = holdbackQueue.get(groupName);
+        if (queue == null) {
+            return List.of();
+        }
+
+        return new ArrayList<>(queue);
     }
 
     public Boolean orderingIsCausal(String groupName){

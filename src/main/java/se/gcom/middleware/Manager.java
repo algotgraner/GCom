@@ -206,6 +206,9 @@ public class Manager {
     public List<String> getGroupNames() {
         return groupManagement.getGroupNames();
     }
+    public List<String> getGroupMembers(String group){
+        return groupManagement.getAddresses(group);
+    }
 
     public void leaveGroup(String groupName) {
         GroupMembership g = GroupMembership.newBuilder()
@@ -228,6 +231,10 @@ public class Manager {
 
     public void setVectorClockValue(String groupName, String process, int value) {
         orderingModule.setVectorClockValue(groupName, process, value);
+    }
+
+    public List<ChatMessage> getHoldbackQueue(String groupName) {
+        return orderingModule.getHoldbackQueue(groupName);
     }
 
     public Boolean orderingIsCausal(String groupName){
@@ -263,5 +270,9 @@ public class Manager {
         for (String groupName : groupNames){
             leaveGroup(groupName);
         }
+    }
+
+    public void removeMember(String groupName, String address) {
+        groupManagement.removeMember(groupName, address);
     }
 }
