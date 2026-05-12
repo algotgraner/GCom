@@ -523,7 +523,7 @@ public class ChatView {
         DebugView debugView = new DebugView(debugController);
 
         Stage debugStage = new Stage();
-        debugStage.setTitle("Debug View -- " + chatController.getAddress());
+        debugStage.setTitle("Debug View");
         debugStage.setScene(new Scene(debugView, 1200, 800));
         debugStage.show();
     }
