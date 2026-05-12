@@ -3,6 +3,7 @@ package se.gcom.app.controller;
 import javafx.collections.ObservableList;
 import se.gcom.app.debug.DebugEvent;
 import se.gcom.middleware.Manager;
+import se.gcom.middleware.communicationModule.ChatMessage;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +49,13 @@ public class DebugController {
             return Collections.emptyList();
         }
         return manager.getMembers(groupName);
+    }
+
+    public List<ChatMessage> getHoldbackQueue(String groupName) {
+        if (manager == null || groupName == null || groupName.isBlank()) {
+            return Collections.emptyList();
+        }
+        return manager.getHoldbackQueue(groupName);
     }
 
     public String getMyAddress() {
