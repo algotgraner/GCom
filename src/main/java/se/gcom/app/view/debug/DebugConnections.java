@@ -3,6 +3,7 @@ package se.gcom.app.view.debug;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
@@ -17,6 +18,8 @@ public class DebugConnections extends VBox {
     private final DebugController controller;
     private final ComboBox<String> groupSelector = new ComboBox<>();
     private final ComboBox<String> memberSelector = new ComboBox<>();
+    private final Button removeButton = new Button("Remove");
+
     private final ListChangeListener<DebugEvent> eventListener = change -> refresh();
 
     public DebugConnections(DebugController controller) {
@@ -41,7 +44,7 @@ public class DebugConnections extends VBox {
 
         memberSelector.setPromptText("Member");
 
-        HBox members = new HBox(8, memberSelector);
+        HBox members = new HBox(8, memberSelector, removeButton);
 
         getChildren().addAll(title, controls, membersLabel, members);
 
@@ -49,7 +52,7 @@ public class DebugConnections extends VBox {
 
     private void setupActions() {
         groupSelector.setOnAction(event -> refreshContent());
-        memberSelector.setOnAction(event -> removeConnection());
+        removeButton.setOnAction(event -> removeConnection());
         controller.getEvents().addListener(eventListener);
     }
 
@@ -75,10 +78,15 @@ public class DebugConnections extends VBox {
     }
 
     private void removeConnection() {
-        String address =  memberSelector.getValue();
+        String address = memberSelector.getValue();
         String group = groupSelector.getValue();
+
+        if (address == null || group == null) {
+            return;
+        }
+
         controller.removeMember(group, address);
-        List<String> members = new ArrayList<>(controller.getGroupMembers(group));
-        memberSelector.setItems(FXCollections.observableArrayList(members));
+        memberSelector.getItems().remove(address);
+        memberSelector.getSelectionModel().clearSelection();
     }
 }
