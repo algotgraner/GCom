@@ -10,6 +10,7 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
     private final Manager manager;
     private final Set<String> seenMessages;
     private final HashMap<String, Boolean> groupToReliable;
+    private final HashMap<String, Integer> messageCount =  new HashMap<>();
     public CommunicationGrpcHandler(Manager manager) {
         this.manager = manager;
         seenMessages = new HashSet<>();
@@ -27,12 +28,17 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                 }
                 ChatMessage chatMessage = chatMessageBuilder.build();
                 if(!seenMessages.contains(chatMessage.getMessageId())){
+                    messageCount.put(chatMessage.getMessageId(), 1);
                     // incomingMessage uses the OrderingModule
                     seenMessages.add(chatMessage.getMessageId());
                     manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
                     DataAck dataAck = DataAck.newBuilder().addAllPath(chatMessage.getPathList()).setMessageId(chatMessage.getMessageId()).build(); //Put these lines in an else if shortest path should be chosen (or outside the if)
                     manager.sendAck(Message.newBuilder().setDatAck(dataAck).build(), chatMessage.getSenderId());
+                }else{
+                    messageCount.put(chatMessage.getMessageId(), messageCount.get(chatMessage.getMessageId())+1);
                 }
+
+
 
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
