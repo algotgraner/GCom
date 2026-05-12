@@ -6,7 +6,11 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import se.gcom.app.controller.DebugController;
 import se.gcom.app.debug.DebugEvent;
@@ -17,8 +21,7 @@ import java.util.List;
 public class DebugConnections extends VBox {
     private final DebugController controller;
     private final ComboBox<String> groupSelector = new ComboBox<>();
-    private final ComboBox<String> memberSelector = new ComboBox<>();
-    private final Button removeButton = new Button("Remove");
+    private final TableView<String> connectedClientsTable = new TableView<>();
 
     private final ListChangeListener<DebugEvent> eventListener = change -> refresh();
 
@@ -40,19 +43,37 @@ public class DebugConnections extends VBox {
 
         HBox controls = new HBox(8, groupSelector);
 
-        Label membersLabel = new Label("Remove Connection:");
+        Label connectedClientsLabel = new Label("Connected clients");
+        TableColumn<String, String> nameColumn = new TableColumn<>("Name");
+        nameColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue()));
 
-        memberSelector.setPromptText("Member");
+        TableColumn<String, Void> actionColumn = new TableColumn<>("Action");
+        actionColumn.setCellFactory(column -> new TableCell<>() {
+            private final Button removeButton = new Button("Remove");
 
-        HBox members = new HBox(8, memberSelector, removeButton);
+            {
+                removeButton.setOnAction(event -> removeConnection(getTableView().getItems().get(getIndex())));
+            }
 
-        getChildren().addAll(title, controls, membersLabel, members);
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : removeButton);
+            }
+        });
+
+        connectedClientsTable.getColumns().add(nameColumn);
+        connectedClientsTable.getColumns().add(actionColumn);
+        connectedClientsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        connectedClientsTable.setPlaceholder(new Label("No connected clients"));
+        VBox.setVgrow(connectedClientsTable, Priority.ALWAYS);
+
+        getChildren().addAll(title, controls, connectedClientsLabel, connectedClientsTable);
 
     }
 
     private void setupActions() {
         groupSelector.setOnAction(event -> refreshContent());
-        removeButton.setOnAction(event -> removeConnection());
         controller.getEvents().addListener(eventListener);
     }
 
@@ -74,11 +95,11 @@ public class DebugConnections extends VBox {
     private void refreshContent() {
         String group = groupSelector.getValue();
         List<String> members = new ArrayList<>(controller.getGroupMembers(group));
-        memberSelector.setItems(FXCollections.observableArrayList(members));
+        members.sort(String::compareToIgnoreCase);
+        connectedClientsTable.setItems(FXCollections.observableArrayList(members));
     }
 
-    private void removeConnection() {
-        String address = memberSelector.getValue();
+    private void removeConnection(String address) {
         String group = groupSelector.getValue();
 
         if (address == null || group == null) {
@@ -86,7 +107,6 @@ public class DebugConnections extends VBox {
         }
 
         controller.removeMember(group, address);
-        memberSelector.getItems().remove(address);
-        memberSelector.getSelectionModel().clearSelection();
+        connectedClientsTable.getItems().remove(address);
     }
 }
