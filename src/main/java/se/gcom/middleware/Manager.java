@@ -206,6 +206,9 @@ public class Manager {
     public List<String> getGroupNames() {
         return groupManagement.getGroupNames();
     }
+    public List<String> getGroupMembers(String group){
+        return groupManagement.getAddresses(group);
+    }
 
     public void leaveGroup(String groupName) {
         GroupMembership g = GroupMembership.newBuilder()
@@ -263,5 +266,9 @@ public class Manager {
         for (String groupName : groupNames){
             leaveGroup(groupName);
         }
+    }
+
+    public void removeMember(String groupName, String address) {
+        groupManagement.removeMember(groupName, address);
     }
 }

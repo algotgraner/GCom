@@ -30,6 +30,14 @@ public class DebugController {
         return manager.getGroupNames();
     }
 
+    public List<String> getGroupMembers(String groupName) {
+        return manager.getGroupMembers(groupName);
+    }
+
+    public void removeMember(String groupName, String address) {
+        manager.removeMember(groupName, address);
+    }
+
     public Map<String, Integer> getCurrentVectorClock(String groupName) {
         if (manager == null || groupName == null || groupName.isBlank()) {
             return Collections.emptyMap();
