@@ -30,8 +30,7 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                     // incomingMessage uses the OrderingModule
                     seenMessages.add(chatMessage.getMessageId());
                     manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
-                } else {
-                    DataAck dataAck = DataAck.newBuilder().addAllPath(chatMessage.getPathList()).setMessageId(chatMessage.getMessageId()).build();
+                    DataAck dataAck = DataAck.newBuilder().addAllPath(chatMessage.getPathList()).setMessageId(chatMessage.getMessageId()).build(); //Put these lines in an else if shortest path should be chosen (or outside the if)
                     manager.sendAck(Message.newBuilder().setDatAck(dataAck).build(), chatMessage.getSenderId());
                 }
 

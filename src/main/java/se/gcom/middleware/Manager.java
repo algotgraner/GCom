@@ -292,6 +292,7 @@ public class Manager {
         if (!messageToPathMap.containsKey(messageId)){
             messageToPathMap.put(messageId, new ArrayList<>());
         }
+        System.out.println("Received path: " + path);
         for(int i = 0; i < messageToPathMap.get(messageId).size(); i++){
             ArrayList<String> existingPath = messageToPathMap.get(messageId).get(i);
             if(path.getLast().equals(existingPath.getLast())){
