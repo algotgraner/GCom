@@ -1,9 +1,10 @@
 package se.gcom.app.view.debug;
 
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -16,12 +17,17 @@ import se.gcom.app.controller.DebugController;
 import se.gcom.app.debug.DebugEvent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DebugConnections extends VBox {
     private final DebugController controller;
     private final ComboBox<String> groupSelector = new ComboBox<>();
-    private final TableView<String> connectedClientsTable = new TableView<>();
+    private final TableView<ConnectionRow> connectedClientsTable = new TableView<>();
+    private final Map<String, Set<String>> knownClientsByGroup = new HashMap<>();
 
     private final ListChangeListener<DebugEvent> eventListener = change -> refresh();
 
@@ -44,21 +50,30 @@ public class DebugConnections extends VBox {
         HBox controls = new HBox(8, groupSelector);
 
         Label connectedClientsLabel = new Label("Connected clients");
-        TableColumn<String, String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue()));
+        TableColumn<ConnectionRow, String> nameColumn = new TableColumn<>("Id");
+        nameColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().address()));
 
-        TableColumn<String, Void> actionColumn = new TableColumn<>("Action");
+        TableColumn<ConnectionRow, Void> actionColumn = new TableColumn<>("Enabled");
         actionColumn.setCellFactory(column -> new TableCell<>() {
-            private final Button removeButton = new Button("Remove");
+            private final CheckBox enabledToggle = new CheckBox();
 
             {
-                removeButton.setOnAction(event -> removeConnection(getTableView().getItems().get(getIndex())));
+                enabledToggle.setOnAction(event -> {
+                    ConnectionRow connection = getTableView().getItems().get(getIndex());
+                    setConnectionEnabled(connection, enabledToggle.isSelected());
+                });
             }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                setGraphic(empty ? null : removeButton);
+                if (empty) {
+                    setGraphic(null);
+                    return;
+                }
+
+                enabledToggle.setSelected(getTableView().getItems().get(getIndex()).enabled());
+                setGraphic(enabledToggle);
             }
         });
 
@@ -94,19 +109,54 @@ public class DebugConnections extends VBox {
 
     private void refreshContent() {
         String group = groupSelector.getValue();
-        List<String> members = new ArrayList<>(controller.getGroupMembers(group));
-        members.sort(String::compareToIgnoreCase);
-        connectedClientsTable.setItems(FXCollections.observableArrayList(members));
-    }
-
-    private void removeConnection(String address) {
-        String group = groupSelector.getValue();
-
-        if (address == null || group == null) {
+        if (group == null) {
+            connectedClientsTable.setItems(FXCollections.observableArrayList());
             return;
         }
 
-        controller.removeMember(group, address);
-        connectedClientsTable.getItems().remove(address);
+        List<String> activeMembers = new ArrayList<>(controller.getGroupMembers(group));
+        Set<String> knownMembers = knownClientsByGroup.computeIfAbsent(group, ignored -> new HashSet<>());
+        knownMembers.addAll(activeMembers);
+
+        Set<String> activeMemberSet = new HashSet<>(activeMembers);
+        List<ConnectionRow> rows = knownMembers.stream()
+                .sorted(String::compareToIgnoreCase)
+                .map(address -> new ConnectionRow(address, activeMemberSet.contains(address)))
+                .toList();
+        connectedClientsTable.setItems(FXCollections.observableArrayList(rows));
+    }
+
+    private void setConnectionEnabled(ConnectionRow connection, boolean enabled) {
+        String group = groupSelector.getValue();
+
+        if (connection == null || group == null) {
+            return;
+        }
+
+        controller.setMemberEnabled(group, connection.address(), enabled);
+        connection.setEnabled(enabled);
+        connectedClientsTable.refresh();
+    }
+
+    private static class ConnectionRow {
+        private final String address;
+        private boolean enabled;
+
+        private ConnectionRow(String address, boolean enabled) {
+            this.address = address;
+            this.enabled = enabled;
+        }
+
+        private String address() {
+            return address;
+        }
+
+        private boolean enabled() {
+            return enabled;
+        }
+
+        private void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
     }
 }

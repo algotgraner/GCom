@@ -96,7 +96,10 @@ public class GroupManagement {
     }
 
     public void addNewMember(String groupName, String ipAddress){
-        groupAddressMap.get(groupName).add(ipAddress);
+        ArrayList<String> addresses = groupAddressMap.get(groupName);
+        if (addresses != null && !addresses.contains(ipAddress)) {
+            addresses.add(ipAddress);
+        }
     }
     public void removeMember(String groupName, String ipAddress){
         groupAddressMap.get(groupName).remove(ipAddress);
