@@ -7,6 +7,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import se.gcom.app.controller.DebugController;
+import se.gcom.app.view.debug.DebugConnections;
 import se.gcom.app.view.debug.DebugConsole;
 import se.gcom.app.view.debug.DebugOrdering;
 import se.gcom.app.view.debug.DebugOverview;
@@ -27,7 +28,8 @@ public class DebugView extends BorderPane {
         sidebar.setItems(FXCollections.observableArrayList(
                 "Overview",
                 "Ordering",
-                "Console"
+                "Console",
+                "Connections"
         ));
 
         sidebar.setPrefWidth(180);
@@ -48,8 +50,10 @@ public class DebugView extends BorderPane {
                 setCenter(new DebugOverview());
             } else if ("Console".equals(newValue)) {
                 setCenter(new DebugConsole(controller));
-            }   else if ("Ordering".equals(newValue)) {
+            } else if ("Ordering".equals(newValue)) {
                 setCenter(new DebugOrdering(controller));
+            } else if ("Connections".equals(newValue)) {
+                setCenter(new DebugConnections(controller));
             }
         });
     }
