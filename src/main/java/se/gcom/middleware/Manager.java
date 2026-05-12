@@ -293,4 +293,7 @@ public class Manager {
     public ArrayList<ArrayList<String>> getPaths(String messageId){
         return messageToPathMap.get(messageId);
     }
+    public ArrayList<String> getMessages(String groupName){
+        return new ArrayList<>(messageToPathMap.keySet());
+    }
 }
