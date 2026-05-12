@@ -32,6 +32,8 @@ message GroupMembership{
 message Ack {
   bool success = 1;
   string errorMessage = 2;
+  int32 dataMessages = 5;
+  int32 ackMessages = 6;
   oneof details {
     DataAck data = 3;
     MembershipAck membership = 4;

@@ -1,6 +1,7 @@
 package se.gcom.middleware.communicationModule;
 
 import io.grpc.stub.StreamObserver;
+import se.gcom.app.debug.DebugEventType;
 import se.gcom.middleware.Manager;
 
 import java.util.*;
@@ -18,21 +19,29 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
 
     @Override
     public void sendMessage(Message msg, StreamObserver<Ack> responseObserver) {
+        manager.getDebugMonitor().recordEvent(
+                DebugEventType.NETWORK_RECEIVE,
+                manager.getMyAddress(),
+                "content=" + msg.getContentCase()
+        );
 
         switch (msg.getContentCase()){
             case CHATMESSAGE:
                 ChatMessage chatMessage = msg.getChatMessage();
+                Ack chatAck = Ack.newBuilder().setSuccess(true).build();
                 if(!seenMessages.contains(chatMessage.getMessageId())){
                     // incomingMessage uses the OrderingModule
                     seenMessages.add(chatMessage.getMessageId());
-                    manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
+                    chatAck = manager.handleIncomingMessage(chatMessage, groupToReliable.getOrDefault(chatMessage.getGroupId(), false));
                 }
 
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
                 System.out.println(chatMessage.getGroupId());
                 System.out.println(chatMessage.getMessageId());
-                break;
+                responseObserver.onNext(chatAck);
+                responseObserver.onCompleted();
+                return;
 
             case GROUPMEMBERSHIP:
                 GroupMembership groupMembership = msg.getGroupMembership();

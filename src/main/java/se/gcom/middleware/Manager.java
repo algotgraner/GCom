@@ -14,6 +14,7 @@ import se.gcom.middleware.messageOrderingModule.OrderingModule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Manager {
 
@@ -23,6 +24,7 @@ public class Manager {
     String myAddress;
     private long messageCounter;
     private final DebugMonitor debugMonitor = new DebugMonitor();
+    private final Map<String, Boolean> groupReliableMap = new ConcurrentHashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -77,18 +79,24 @@ public class Manager {
             // print all messages for debug
             System.out.println("Sending to" + addresses);
             // let communication module send the message
-            communicationService.multicast(m, addresses);
+            Ack ack = communicationService.multicast(m, addresses);
+            recordOperationPerformance(groupName, messageId, ack);
         }
     }
 
-    public void handleIncomingMessage(ChatMessage msg, boolean reliable){
+    public Ack handleIncomingMessage(ChatMessage msg, boolean reliable){
         orderingModule.handleIncomingMessage(msg);
         if (reliable) {
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
             addresses.remove(msg.getSenderId());
-            communicationService.multicast(m, addresses);
+            return communicationService.multicast(m, addresses);
         }
+
+        // not reliable return normal ack
+        return Ack.newBuilder()
+                .setSuccess(true)
+                .build();
     }
 
     public void deliverIncomingMessage(ChatMessage msg){
@@ -134,6 +142,7 @@ public class Manager {
         groupManagement.createNewStaticGroup(groupName, groupMembers);
     }
     public void addGroupToReliablePairing(String groupName, boolean reliable){
+        groupReliableMap.put(groupName, reliable);
         communicationService.addGroupToReliablePairing(groupName, reliable);
     }
 
@@ -190,6 +199,7 @@ public class Manager {
                     }
                 }
                 communicationService.addGroupToReliablePairing(name, membershipAck.getIsReliable());
+                groupReliableMap.put(name, membershipAck.getIsReliable());
             } else {
                 groupManagement.leaveGroup(name);
                 throw new StatusRuntimeException(Status.PERMISSION_DENIED.withDescription("You are not allowed to join this group"));
@@ -241,6 +251,20 @@ public class Manager {
 
     public Boolean orderingIsCausal(String groupName){
         return orderingModule.orderingIsCausal(groupName);
+    }
+
+    private void recordOperationPerformance(String groupName, String messageId, Ack ack) {
+        boolean reliable = groupReliableMap.getOrDefault(groupName, false);
+        OrderingModule.OrderingType orderingType = orderingModule.getOrderingType(groupName);
+        int dataMessages = ack.getDataMessages();
+        int ackMessages = ack.getAckMessages();
+        int totalMessages = dataMessages + ackMessages;
+
+        debugMonitor.recordEvent(
+                DebugEventType.OPERATION_PERFORMANCE,
+                myAddress,
+                "messageId=" + messageId + " group=" + groupName + " ordering=" + orderingType + " multicast=" + (reliable ? "RELIABLE" : "UNRELIABLE") + " data=" + dataMessages + " acks=" + ackMessages + " total=" + totalMessages
+        );
     }
 
     public void setGroupOrdering(String groupId, OrderingModule.OrderingType type) {
