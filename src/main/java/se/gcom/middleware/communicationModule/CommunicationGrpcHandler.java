@@ -21,18 +21,32 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
 
         switch (msg.getContentCase()){
             case CHATMESSAGE:
-                ChatMessage chatMessage = msg.getChatMessage();
+                ChatMessage.Builder chatMessageBuilder = ChatMessage.newBuilder(msg.getChatMessage());
+                if(!msg.getChatMessage().getPathList().contains(manager.getMyAddress())){
+                    chatMessageBuilder.addPath(manager.getMyAddress());
+                }
+                ChatMessage chatMessage = chatMessageBuilder.build();
                 if(!seenMessages.contains(chatMessage.getMessageId())){
                     // incomingMessage uses the OrderingModule
                     seenMessages.add(chatMessage.getMessageId());
                     manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
+                    DataAck dataAck = DataAck.newBuilder().addAllPath(chatMessage.getPathList()).setMessageId(chatMessage.getMessageId()).build(); //Put these lines in an else if shortest path should be chosen (or outside the if)
+                    manager.sendAck(Message.newBuilder().setDatAck(dataAck).build(), chatMessage.getSenderId());
                 }
 
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
                 System.out.println(chatMessage.getGroupId());
                 System.out.println(chatMessage.getMessageId());
-                break;
+
+                Ack ack2 = Ack.newBuilder()
+                        .setSuccess(true)
+                        .build();
+
+
+                responseObserver.onNext(ack2);
+                responseObserver.onCompleted();
+                return;
 
             case GROUPMEMBERSHIP:
                 GroupMembership groupMembership = msg.getGroupMembership();
@@ -79,6 +93,18 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                     return;
                 }
                 break;
+            case DATACK:
+                DataAck dataAck1 = msg.getDatAck();
+                manager.receivePath(new ArrayList<>(dataAck1.getPathList()), dataAck1.getMessageId());
+
+                Ack ack = Ack.newBuilder()
+                        .setSuccess(true)
+                        .build();
+
+                responseObserver.onNext(ack);
+                responseObserver.onCompleted();
+                return;
+
         }
 
         Ack ack = Ack.newBuilder().setSuccess(true).build();

@@ -12,6 +12,7 @@ import se.gcom.middleware.groupManagementModule.GroupManagement;
 import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,8 @@ public class Manager {
     String myAddress;
     private long messageCounter;
     private final DebugMonitor debugMonitor = new DebugMonitor();
+    private HashMap<String , ArrayList<ArrayList<String>>> messageToPathMap = new HashMap<>();
+    private HashMap<String, ArrayList<String>> groupToMessageMap = new HashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -63,6 +66,7 @@ public class Manager {
                         .setSenderId(groupManagement.getAddress())
                         .setGroupId(groupName)
                         .setPayload(message)
+                        .addPath(this.myAddress)
                         .build();
 
         if(!groupManagement.isStaticGroup(groupName) || groupManagement.canSendMessages(groupName)){
@@ -78,6 +82,10 @@ public class Manager {
             System.out.println("Sending to" + addresses);
             // let communication module send the message
             communicationService.multicast(m, addresses);
+            if(!groupToMessageMap.containsKey(groupName)){
+                groupToMessageMap.put(groupName, new ArrayList<>());
+            }
+            groupToMessageMap.get(groupName).add(messageId);
         }
     }
 
@@ -89,6 +97,10 @@ public class Manager {
             addresses.remove(msg.getSenderId());
             communicationService.multicast(m, addresses);
         }
+    }
+
+    public void sendAck(Message msg, String ipAddress){
+        communicationService.multicast(msg, new ArrayList<>(List.of(ipAddress)));
     }
 
     public void deliverIncomingMessage(ChatMessage msg){
@@ -280,5 +292,28 @@ public class Manager {
 
     public void addMember(String groupName, String address) {
         groupManagement.addNewMember(groupName, address);
+    }
+
+    public void receivePath(ArrayList<String> path, String messageId){
+        if (!messageToPathMap.containsKey(messageId)){
+            messageToPathMap.put(messageId, new ArrayList<>());
+        }
+        System.out.println("Received path: " + path);
+        for(int i = 0; i < messageToPathMap.get(messageId).size(); i++){
+            ArrayList<String> existingPath = messageToPathMap.get(messageId).get(i);
+            if(path.getLast().equals(existingPath.getLast())){
+                if(existingPath.size() >= path.size()){
+                    messageToPathMap.get(messageId).set(i, path);
+                    return;
+                }
+            }
+        }
+        messageToPathMap.get(messageId).add(path);
+    }
+    public ArrayList<ArrayList<String>> getPaths(String messageId){
+        return messageToPathMap.get(messageId);
+    }
+    public ArrayList<String> getMessages(String groupName){
+        return groupToMessageMap.get(groupName);
     }
 }

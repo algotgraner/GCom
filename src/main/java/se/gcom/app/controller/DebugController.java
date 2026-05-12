@@ -5,6 +5,7 @@ import se.gcom.app.debug.DebugEvent;
 import se.gcom.middleware.Manager;
 import se.gcom.middleware.communicationModule.ChatMessage;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +77,12 @@ public class DebugController {
             return Collections.emptyList();
         }
         return manager.getHoldbackQueue(groupName);
+    }
+    public ArrayList<String> getMessages(String groupName) {
+        return manager.getMessages(groupName);
+    }
+    public ArrayList<ArrayList<String>> getPaths(String message){
+        return manager.getPaths(message);
     }
 
     public String getMyAddress() {

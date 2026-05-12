@@ -11,6 +11,7 @@ message Message {
   oneof content {
     ChatMessage chatMessage = 1;
     GroupMembership groupMembership = 2;
+    DataAck datAck = 3;
   }
 }
 
@@ -20,6 +21,7 @@ message ChatMessage {
   string groupId= 3;
   string payload = 4;
   map<string, int32> vectorClock = 5;
+  repeated string path = 6;
 }
 
 message GroupMembership{
@@ -49,4 +51,7 @@ message MembershipAck {
   bool canJoinStaticGroup = 8;
 }
 
-message DataAck { }
+message DataAck {
+  string messageId = 1;
+  repeated string path = 2;
+}
