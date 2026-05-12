@@ -192,4 +192,9 @@ public class ChatController {
     public String getAddress(){
         return manager.getMyAddress();
     }
+
+    public Boolean namingServerIsUp(){
+        return manager.namingServerIsUp();
+    }
 }
+
