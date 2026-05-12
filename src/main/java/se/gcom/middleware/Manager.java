@@ -276,4 +276,8 @@ public class Manager {
     public void removeMember(String groupName, String address) {
         groupManagement.removeMember(groupName, address);
     }
+
+    public void addMember(String groupName, String address) {
+        groupManagement.addNewMember(groupName, address);
+    }
 }

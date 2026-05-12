@@ -116,53 +116,49 @@ public class OrderingModule {
         System.out.println("Can deliver?: " + myVC.canDeliver(incomingClock, msg.getSenderId()));
         System.out.println("Holdback queue size: " + queue.size());
 
-        //boolean isOwnMessage = msg.getSenderId().equals(myAddress);
+        // add to holdback
+        queue.add(msg);
+        // now we check the whole queue and deliver
+        checkHoldbackQueue(groupId);
 
-        if (myVC.canDeliver(incomingClock, msg.getSenderId())) {
-            // deliver immediately
-            manager.deliverIncomingMessage(msg);
-            // update oru clock
-            myVC.updateFromMap(incomingClock);
-            recordVectorClock(groupId, "delivered " + msg.getMessageId(), myVC.attachClock());
-
-            // check holdback queue for newly deliverable messages
-            checkHoldbackQueue(groupId);
-        } else {
-            // put at holdback queue
-            queue.add(msg);
-            System.out.println("Message " + msg.getMessageId() +" held back, current holdback size: " + queue.size());
-            manager.getDebugMonitor().recordEvent(
-                    DebugEventType.MESSAGE_HELD_BACK,
-                    myAddress,
-                    "group=" + groupId
-                            + " message=" + msg.getMessageId()
-                            + " sender=" + msg.getSenderId()
-                            + " incoming=" + incomingClock
-                            + " local=" + myVC.attachClock()
-            );
-        }
     }
 
     private void checkHoldbackQueue(String groupId) {
         Queue<ChatMessage> queue = holdbackQueue.get(groupId);
         VectorClock myVC = vectorClockMap.get(groupId);
+        if (queue == null || myVC == null || queue.isEmpty()) {
+            return;
+        }
 
-        if (queue == null || myVC == null) return;
+        System.out.println("[Holdback] Checking queue (size=" + queue.size() + ") for " + groupId);
 
-        boolean delivered;
+        boolean deliveredSomething;
+
         do {
-            delivered = false;
-            for (ChatMessage m : new ArrayList<>(queue)) {
+            deliveredSomething = false;
+            // Use iterator to safely remove while iterating
+            var iterator = queue.iterator();
+
+            while (iterator.hasNext()) {
+                ChatMessage m = iterator.next();
+
                 if (myVC.canDeliver(m.getVectorClockMap(), m.getSenderId())) {
-                    queue.remove(m);
+                    iterator.remove();   // remove this message
+
+                    System.out.println("[Holdback] DELIVERING: " + m.getMessageId()
+                            + " from " + m.getSenderId());
+
                     manager.deliverIncomingMessage(m);
                     myVC.updateFromMap(m.getVectorClockMap());
                     recordVectorClock(groupId, "released " + m.getMessageId(), myVC.attachClock());
-                    delivered = true;
+
+                    deliveredSomething = true;
+                    // start over so we keep the order
                     break;
                 }
             }
-        } while (delivered);
+        } while (deliveredSomething);
+        System.out.println("[Holdback] Done, Remaining in queue: " + queue.size());
     }
 
     public void addMemberToVectorClock(String groupName, String newMemberAddress) {
