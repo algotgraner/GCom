@@ -34,9 +34,9 @@ public class App extends Application {
     @Override
     public void stop() throws Exception {
         System.out.println("shutting down...");
-        if(manager != null){
+        /*if(manager != null){
             manager.leaveAllGroups();
-        }
+        }*/
         super.stop();
     }
 

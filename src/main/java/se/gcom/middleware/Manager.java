@@ -258,6 +258,14 @@ public class Manager {
         return debugMonitor;
     }
 
+    public void notifyClientDown(String clientID){
+        debugMonitor.recordEvent(
+                DebugEventType.NETWORK_NO_RESPONSE,
+                myAddress,
+                "Client with ID: " + clientID + "is down and does not respond"
+        );
+    }
+
     public void leaveAllGroups(){
         List<String> groupNames = groupManagement.getGroupNames();
         for (String groupName : groupNames){
