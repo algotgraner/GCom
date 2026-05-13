@@ -1,6 +1,7 @@
 package se.gcom.middleware.communicationModule;
 
 import io.grpc.stub.StreamObserver;
+import se.gcom.app.debug.DebugEventType;
 import se.gcom.middleware.Manager;
 
 import java.util.*;
@@ -19,6 +20,11 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
 
     @Override
     public void sendMessage(Message msg, StreamObserver<Ack> responseObserver) {
+        manager.getDebugMonitor().recordEvent(
+                DebugEventType.NETWORK_RECEIVE,
+                manager.getMyAddress(),
+                "content=" + msg.getContentCase()
+        );
 
         switch (msg.getContentCase()){
             case CHATMESSAGE:
@@ -27,30 +33,23 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                     chatMessageBuilder.addPath(manager.getMyAddress());
                 }
                 ChatMessage chatMessage = chatMessageBuilder.build();
+                Ack chatAck = Ack.newBuilder().setSuccess(true).build();
                 if(!seenMessages.contains(chatMessage.getMessageId())){
                     messageCount.put(chatMessage.getMessageId(), 1);
                     // incomingMessage uses the OrderingModule
                     seenMessages.add(chatMessage.getMessageId());
-                    manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
+                    chatAck = manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
                     DataAck dataAck = DataAck.newBuilder().addAllPath(chatMessage.getPathList()).setMessageId(chatMessage.getMessageId()).build(); //Put these lines in an else if shortest path should be chosen (or outside the if)
                     manager.sendAck(Message.newBuilder().setDatAck(dataAck).build(), chatMessage.getSenderId());
                 }else{
                     messageCount.put(chatMessage.getMessageId(), messageCount.get(chatMessage.getMessageId())+1);
                 }
 
-
-
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
                 System.out.println(chatMessage.getGroupId());
                 System.out.println(chatMessage.getMessageId());
-
-                Ack ack2 = Ack.newBuilder()
-                        .setSuccess(true)
-                        .build();
-
-
-                responseObserver.onNext(ack2);
+                responseObserver.onNext(chatAck);
                 responseObserver.onCompleted();
                 return;
 

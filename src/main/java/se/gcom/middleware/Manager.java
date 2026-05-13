@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Manager {
 
@@ -24,8 +25,9 @@ public class Manager {
     String myAddress;
     private long messageCounter;
     private final DebugMonitor debugMonitor = new DebugMonitor();
-    private HashMap<String , ArrayList<ArrayList<String>>> messageToPathMap = new HashMap<>();
+    private HashMap<String, ArrayList<ArrayList<String>>> messageToPathMap = new HashMap<>();
     private HashMap<String, ArrayList<String>> groupToMessageMap = new HashMap<>();
+    private final Map<String, Boolean> groupReliableMap = new ConcurrentHashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -35,7 +37,7 @@ public class Manager {
         this.debugController = debugController;
     }
 
-    public void start(){
+    public void start() {
         communicationService = new CommunicationService(this);
         int port = startServer();
         this.groupManagement = new GroupManagement(port);
@@ -56,20 +58,20 @@ public class Manager {
         return groupManagement.getAddress() + "--" + (++messageCounter);
     }
 
-    public void sendMessage(String groupName, String message){
+    public void sendMessage(String groupName, String message) {
         List<String> addresses = groupManagement.getAddresses(groupName);
         // Create the message
 
         String messageId = generateMessageId();
         ChatMessage msg = ChatMessage.newBuilder()
-                        .setMessageId(messageId)
-                        .setSenderId(groupManagement.getAddress())
-                        .setGroupId(groupName)
-                        .setPayload(message)
-                        .addPath(this.myAddress)
-                        .build();
+                .setMessageId(messageId)
+                .setSenderId(groupManagement.getAddress())
+                .setGroupId(groupName)
+                .setPayload(message)
+                .addPath(this.myAddress)
+                .build();
 
-        if(!groupManagement.isStaticGroup(groupName) || groupManagement.canSendMessages(groupName)){
+        if (!groupManagement.isStaticGroup(groupName) || groupManagement.canSendMessages(groupName)) {
             debugMonitor.recordEvent(
                     DebugEventType.MESSAGE_CREATED,
                     myAddress,
@@ -81,30 +83,39 @@ public class Manager {
             // print all messages for debug
             System.out.println("Sending to" + addresses);
             // let communication module send the message
-            communicationService.multicast(m, addresses);
-            if(!groupToMessageMap.containsKey(groupName)){
+            Ack ack = communicationService.multicast(m, addresses);
+            recordOperationPerformance(groupName, messageId, ack);
+            if (!groupToMessageMap.containsKey(groupName)) {
                 groupToMessageMap.put(groupName, new ArrayList<>());
             }
             groupToMessageMap.get(groupName).add(messageId);
+
         }
     }
 
-    public void handleIncomingMessage(ChatMessage msg, boolean reliable){
+    public Ack handleIncomingMessage(ChatMessage msg, boolean reliable){
         orderingModule.handleIncomingMessage(msg);
         groupToMessageMap.get(msg.getGroupId()).add(msg.getMessageId());
         if (reliable) {
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
+            // incoming so we do not need to send to sender and ourselves
             addresses.remove(msg.getSenderId());
-            communicationService.multicast(m, addresses);
+            addresses.remove(myAddress);
+            return communicationService.multicast(m, addresses);
         }
+
+        // not reliable return normal ack
+        return Ack.newBuilder()
+                .setSuccess(true)
+                .build();
     }
 
-    public void sendAck(Message msg, String ipAddress){
+    public void sendAck(Message msg, String ipAddress) {
         communicationService.multicast(msg, new ArrayList<>(List.of(ipAddress)));
     }
 
-    public void deliverIncomingMessage(ChatMessage msg){
+    public void deliverIncomingMessage(ChatMessage msg) {
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
         chatController.receiveMessage(msg.getSenderId(), msg.getGroupId(), msg.getPayload(), outgoing);
         debugMonitor.recordEvent(
@@ -119,7 +130,7 @@ public class Manager {
 
     public void deliverIncomingMessage(GroupMembership msg) {
         if (msg.getJoining()) {
-            if(!groupManagement.isStaticGroup(msg.getGroupId()) || groupManagement.canJoinStaticGroup(msg.getGroupId(), msg.getSenderId())) {
+            if (!groupManagement.isStaticGroup(msg.getGroupId()) || groupManagement.canJoinStaticGroup(msg.getGroupId(), msg.getSenderId())) {
                 groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
                 orderingModule.addMemberToVectorClock(msg.getGroupId(), msg.getSenderId());
                 System.out.println("Received join message");
@@ -149,6 +160,7 @@ public class Manager {
         groupToMessageMap.put(groupName, new ArrayList<>());
     }
     public void addGroupToReliablePairing(String groupName, boolean reliable){
+        groupReliableMap.put(groupName, reliable);
         communicationService.addGroupToReliablePairing(groupName, reliable);
     }
 
@@ -158,7 +170,7 @@ public class Manager {
 
     public void joinGroup(String name, String ip) throws StatusRuntimeException {
         ArrayList<String> addresses;
-        if (groupManagement.NamingServerIsUp()){
+        if (groupManagement.NamingServerIsUp()) {
             addresses = groupManagement.joinGroup(name);
         } else {
             addresses = new ArrayList<>();
@@ -175,7 +187,7 @@ public class Manager {
         System.out.println("Sending join request to first in member list: " + addresses.getFirst());
         Ack ack = communicationService.multicast(m, addresses);
 
-        if (ack.getSuccess() && ack.hasMembership()){
+        if (ack.getSuccess() && ack.hasMembership()) {
             MembershipAck membershipAck = ack.getMembership();
             System.out.println("Got membership ack with VC: " + membershipAck.getVectorClockMap());
             System.out.println("Can join group? " + membershipAck.getCanJoinStaticGroup());
@@ -206,6 +218,7 @@ public class Manager {
                 }
                 communicationService.addGroupToReliablePairing(name, membershipAck.getIsReliable());
                 groupToMessageMap.put(name, new ArrayList<>());
+                groupReliableMap.put(name, membershipAck.getIsReliable());
             } else {
                 groupManagement.leaveGroup(name);
                 throw new StatusRuntimeException(Status.PERMISSION_DENIED.withDescription("You are not allowed to join this group"));
@@ -213,17 +226,19 @@ public class Manager {
         }
     }
 
-    public boolean namingServerIsUp(){
+    public boolean namingServerIsUp() {
         return groupManagement.NamingServerIsUp();
     }
-    public List<String> getMembers(String group){
+
+    public List<String> getMembers(String group) {
         return groupManagement.getAddresses(group);
     }
 
     public List<String> getGroupNames() {
         return groupManagement.getGroupNames();
     }
-    public List<String> getGroupMembers(String group){
+
+    public List<String> getGroupMembers(String group) {
         return groupManagement.getAddresses(group);
     }
 
@@ -255,13 +270,28 @@ public class Manager {
         return orderingModule.getHoldbackQueue(groupName);
     }
 
-    public Boolean orderingIsCausal(String groupName){
+    public Boolean orderingIsCausal(String groupName) {
         return orderingModule.orderingIsCausal(groupName);
+    }
+
+    private void recordOperationPerformance(String groupName, String messageId, Ack ack) {
+        boolean reliable = groupReliableMap.getOrDefault(groupName, false);
+        OrderingModule.OrderingType orderingType = orderingModule.getOrderingType(groupName);
+        int dataMessages = ack.getDataMessages();
+        int ackMessages = ack.getAckMessages();
+        int totalMessages = dataMessages + ackMessages;
+
+        debugMonitor.recordEvent(
+                DebugEventType.OPERATION_PERFORMANCE,
+                myAddress,
+                "messageId=" + messageId + " group=" + groupName + " ordering=" + orderingType + " multicast=" + (reliable ? "RELIABLE" : "UNRELIABLE") + " data=" + dataMessages + " acks=" + ackMessages + " total=" + totalMessages
+        );
     }
 
     public void setGroupOrdering(String groupId, OrderingModule.OrderingType type) {
         orderingModule.setUpGroup(groupId, type);
     }
+
     public boolean isStaticGroup(String groupName) {
         return groupManagement.isStaticGroup(groupName);
     }
@@ -270,10 +300,11 @@ public class Manager {
         return groupManagement.getStaticGroupMembers(groupName);
     }
 
-    public boolean canJoinStaticGroup(String group, String address){
+    public boolean canJoinStaticGroup(String group, String address) {
         return groupManagement.canJoinStaticGroup(group, address);
     }
-    public void canStartSendingMessagesCheck(String group){
+
+    public void canStartSendingMessagesCheck(String group) {
         if (groupManagement.canStartSendingMessages(group)) {
             groupManagement.addCanSendMessages(group);
         }
@@ -283,9 +314,9 @@ public class Manager {
         return debugMonitor;
     }
 
-    public void leaveAllGroups(){
+    public void leaveAllGroups() {
         List<String> groupNames = groupManagement.getGroupNames();
-        for (String groupName : groupNames){
+        for (String groupName : groupNames) {
             leaveGroup(groupName);
         }
     }
@@ -298,15 +329,15 @@ public class Manager {
         groupManagement.addNewMember(groupName, address);
     }
 
-    public void receivePath(ArrayList<String> path, String messageId){
-        if (!messageToPathMap.containsKey(messageId)){
+    public void receivePath(ArrayList<String> path, String messageId) {
+        if (!messageToPathMap.containsKey(messageId)) {
             messageToPathMap.put(messageId, new ArrayList<>());
         }
         System.out.println("Received path: " + path);
-        for(int i = 0; i < messageToPathMap.get(messageId).size(); i++){
+        for (int i = 0; i < messageToPathMap.get(messageId).size(); i++) {
             ArrayList<String> existingPath = messageToPathMap.get(messageId).get(i);
-            if(path.getLast().equals(existingPath.getLast())){
-                if(existingPath.size() >= path.size()){
+            if (path.getLast().equals(existingPath.getLast())) {
+                if (existingPath.size() >= path.size()) {
                     messageToPathMap.get(messageId).set(i, path);
                     return;
                 }
@@ -314,7 +345,40 @@ public class Manager {
         }
         messageToPathMap.get(messageId).add(path);
     }
-    public ArrayList<ArrayList<String>> getPaths(String messageId){
+
+    public void handleNodeFailure(String groupName, String failedAddress) {
+        System.err.println("Node failure detected, sending leave");
+        debugMonitor.recordEvent(
+                DebugEventType.NETWORK_FAILURE,
+                myAddress,
+                "Detected failure of " + failedAddress
+        );
+
+        // check that we are a member of the group still
+        if (!groupManagement.getAddresses(groupName).contains(myAddress)) {
+            return;
+        }
+        // clean up local state
+        groupManagement.removeMember(groupName, failedAddress);
+        orderingModule.leaveGroup(groupName, failedAddress);
+        // craft leave msg
+        GroupMembership g = GroupMembership.newBuilder()
+                .setGroupId(groupName)
+                .setSenderId(failedAddress)
+                .setJoining(false)
+                .setMessageId("1")
+                .build();
+        Message m = Message.newBuilder().setGroupMembership(g).build();
+        ArrayList<String> addresses = new ArrayList<>(groupManagement.getAddresses(groupName));
+        // noo need to send to ourself
+        addresses.remove(myAddress);
+        System.out.println("Propagating LEAVE for failed node " + failedAddress
+                + " in group '" + groupName + "' to: " + addresses);
+
+        communicationService.multicast(m, addresses);
+    }
+
+    public ArrayList<ArrayList<String>> getPaths(String messageId) {
         return messageToPathMap.get(messageId);
     }
     public ArrayList<String> getMessages(String groupName){

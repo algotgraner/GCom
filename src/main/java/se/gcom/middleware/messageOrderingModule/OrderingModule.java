@@ -59,14 +59,19 @@ public class OrderingModule {
         }
     }
 
-    public void leaveGroup(String groupName, String leavingMemberAddress) {
+
+    public void leaveGroup(String groupName, String leavingAddress) {
+        System.out.println("OrderingModule: handling leave of " + leavingAddress
+                + " in group " + groupName);
 
         VectorClock vc = vectorClockMap.get(groupName);
-        vc.removeProcess(leavingMemberAddress);
-        System.out.println("[Ordering] Member left: " + leavingMemberAddress
-                + " from group " + groupName + " → Updated VC: " + vc);
-
-        recordVectorClock(groupName, "member " + leavingMemberAddress + " left", vc.attachClock());
+        if (vc == null) {
+            return;
+        }
+        // Remove the failed process from the vector clock
+        vc.removeProcess(leavingAddress);
+        recordVectorClock(groupName, "leave" + leavingAddress + " removed", vc.attachClock());
+        checkHoldbackQueue(groupName);
     }
 
     public void removeGroup (String groupName) {
@@ -224,6 +229,10 @@ public class OrderingModule {
         } else {
             return false;
         }
+    }
+
+    public OrderingType getOrderingType(String groupName) {
+        return groupOrdering.getOrDefault(groupName, OrderingType.UNORDERED);
     }
 
     private void recordVectorClock(String groupName, String action, Map<String, Integer> clock) {

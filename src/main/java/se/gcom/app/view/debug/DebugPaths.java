@@ -79,8 +79,13 @@ public class DebugPaths extends VBox {
 
     private void refreshContent() {
         String group = groupSelector.getValue();
-        List<String> members = new ArrayList<>(controller.getMessages(group));
-        memberSelector.setItems(FXCollections.observableArrayList(members));
+
+        List<String> messages = controller.getMessages(group);
+
+        if (messages == null) {
+            messages = new ArrayList<>();
+        }
+        memberSelector.setItems(FXCollections.observableArrayList(messages));
     }
 
     private void displayPaths(){
