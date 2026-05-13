@@ -140,10 +140,12 @@ public class Manager {
 
     public void addGroup(String groupName) {
         groupManagement.createNewGroup(groupName, new ArrayList<>());
+        groupToMessageMap.put(groupName, new ArrayList<>());
     }
 
     public void addStaticGroup(String groupName, ArrayList<String> groupMembers) {
         groupManagement.createNewStaticGroup(groupName, groupMembers);
+        groupToMessageMap.put(groupName, new ArrayList<>());
     }
     public void addGroupToReliablePairing(String groupName, boolean reliable){
         communicationService.addGroupToReliablePairing(groupName, reliable);
@@ -202,6 +204,7 @@ public class Manager {
                     }
                 }
                 communicationService.addGroupToReliablePairing(name, membershipAck.getIsReliable());
+                groupToMessageMap.put(name, new ArrayList<>());
             } else {
                 groupManagement.leaveGroup(name);
                 throw new StatusRuntimeException(Status.PERMISSION_DENIED.withDescription("You are not allowed to join this group"));
@@ -315,5 +318,15 @@ public class Manager {
     }
     public ArrayList<String> getMessages(String groupName){
         return groupToMessageMap.get(groupName);
+    }
+    public HashMap<String, Integer> getMessageCountMap(String group){
+        HashMap<String, Integer> actualMap = communicationService.getMessageCountMap();
+        HashMap<String, Integer> trimmedMap = new HashMap<>();
+        for(String message : actualMap.keySet()){
+            if(groupToMessageMap.get(group).contains(message)){
+                trimmedMap.put(message, actualMap.get(message));
+            }
+        }
+        return trimmedMap;
     }
 }

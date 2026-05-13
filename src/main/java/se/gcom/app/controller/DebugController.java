@@ -5,10 +5,7 @@ import se.gcom.app.debug.DebugEvent;
 import se.gcom.middleware.Manager;
 import se.gcom.middleware.communicationModule.ChatMessage;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DebugController {
     private Manager manager;
@@ -83,6 +80,10 @@ public class DebugController {
     }
     public ArrayList<ArrayList<String>> getPaths(String message){
         return manager.getPaths(message);
+    }
+
+    public HashMap<String, Integer> getMessageCountMap(String groupName) {
+        return manager.getMessageCountMap(groupName);
     }
 
     public String getMyAddress() {

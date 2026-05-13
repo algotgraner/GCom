@@ -120,4 +120,7 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
     public void addGroupToReliablePairing(String group, boolean reliable){
         groupToReliable.put(group, reliable);
     }
+    public HashMap<String, Integer> getMessageCountMap(){
+        return messageCount;
+    }
 }
