@@ -53,12 +53,14 @@ public class VectorClock {
             String process = entry.getKey();
             int incomingVal = entry.getValue();
 
-            //if our val is less we can not deliver
             if (!process.equals(senderID)) {
-                int ourVal = clock.getOrDefault(process, 0);
+                // removed/crashed dont wait for it
+                if (!clock.containsKey(process)) {
+                    continue;
+                }
+                int ourVal = clock.get(process);
+                //if our val is less we can not deliver
                 if (ourVal < incomingVal) {
-                    System.out.println("CAN NOT DELIVER SECOND");
-
                     return false;
                 }
             }
