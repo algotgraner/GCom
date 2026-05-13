@@ -3,6 +3,8 @@ package se.gcom.middleware.communicationModule;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import se.gcom.middleware.Manager;
+
+import java.util.HashMap;
 import java.util.List;
 
 public class CommunicationService {
@@ -44,6 +46,10 @@ public class CommunicationService {
 
     public Ack multicast(Message msg, List<String> addresses) {
         return sender.multicast(msg, addresses);
+    }
+
+    public HashMap<String, Integer> getMessageCountMap(){
+        return handler.getMessageCountMap();
     }
 
 }

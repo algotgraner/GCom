@@ -95,6 +95,7 @@ public class Manager {
 
     public Ack handleIncomingMessage(ChatMessage msg, boolean reliable){
         orderingModule.handleIncomingMessage(msg);
+        groupToMessageMap.get(msg.getGroupId()).add(msg.getMessageId());
         if (reliable) {
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
@@ -151,10 +152,12 @@ public class Manager {
 
     public void addGroup(String groupName) {
         groupManagement.createNewGroup(groupName, new ArrayList<>());
+        groupToMessageMap.put(groupName, new ArrayList<>());
     }
 
     public void addStaticGroup(String groupName, ArrayList<String> groupMembers) {
         groupManagement.createNewStaticGroup(groupName, groupMembers);
+        groupToMessageMap.put(groupName, new ArrayList<>());
     }
     public void addGroupToReliablePairing(String groupName, boolean reliable){
         groupReliableMap.put(groupName, reliable);
@@ -214,6 +217,7 @@ public class Manager {
                     }
                 }
                 communicationService.addGroupToReliablePairing(name, membershipAck.getIsReliable());
+                groupToMessageMap.put(name, new ArrayList<>());
                 groupReliableMap.put(name, membershipAck.getIsReliable());
             } else {
                 groupManagement.leaveGroup(name);
@@ -377,8 +381,24 @@ public class Manager {
     public ArrayList<ArrayList<String>> getPaths(String messageId) {
         return messageToPathMap.get(messageId);
     }
-
-    public ArrayList<String> getMessages(String groupName) {
-        return groupToMessageMap.get(groupName);
+    public ArrayList<String> getMessages(String groupName){
+        ArrayList<String> messages = groupToMessageMap.get(groupName);
+        ArrayList<String> trimmedMessages = new ArrayList<>();
+        for (String message : messages){
+            if(messageToPathMap.containsKey(message) && !trimmedMessages.contains(message)){
+                trimmedMessages.add(message);
+            }
+        }
+        return trimmedMessages;
+    }
+    public HashMap<String, Integer> getMessageCountMap(String group){
+        HashMap<String, Integer> actualMap = communicationService.getMessageCountMap();
+        HashMap<String, Integer> trimmedMap = new HashMap<>();
+        for(String message : actualMap.keySet()){
+            if(groupToMessageMap.get(group).contains(message)){
+                trimmedMap.put(message, actualMap.get(message));
+            }
+        }
+        return trimmedMap;
     }
 }

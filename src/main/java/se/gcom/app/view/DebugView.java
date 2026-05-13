@@ -27,7 +27,8 @@ public class DebugView extends BorderPane {
                 "Ordering",
                 "Console",
                 "Connections",
-                "Message Paths"
+                "Message Paths",
+                "Message Count"
         ));
 
         sidebar.setPrefWidth(180);
@@ -54,6 +55,8 @@ public class DebugView extends BorderPane {
                 setCenter(new DebugConnections(controller));
             } else if ("Message Paths".equals(newValue)) {
                 setCenter(new DebugPaths(controller));
+            } else if ("Message Count".equals(newValue)) {
+                setCenter(new DebugCounter(controller));
             }
         });
     }
