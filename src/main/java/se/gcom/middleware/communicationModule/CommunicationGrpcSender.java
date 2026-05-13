@@ -43,6 +43,7 @@ public class CommunicationGrpcSender {
 
         } catch (StatusRuntimeException e){
             System.err.println("GRPC runtime exception, Removing the address, (SHOULD CALL MANAGER HERE AND REPORT FAILURE):" + e.getMessage());
+            manager.handleNodeFailure(msg.getChatMessage().getGroupId(), address);
             removeChannel(address);
             return Ack.newBuilder()
                     .setSuccess(false)
