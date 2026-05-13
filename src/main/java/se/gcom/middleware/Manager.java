@@ -91,6 +91,7 @@ public class Manager {
 
     public void handleIncomingMessage(ChatMessage msg, boolean reliable){
         orderingModule.handleIncomingMessage(msg);
+        groupToMessageMap.get(msg.getGroupId()).add(msg.getMessageId());
         if (reliable) {
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());

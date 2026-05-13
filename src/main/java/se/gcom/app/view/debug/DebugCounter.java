@@ -26,7 +26,6 @@ public class DebugCounter extends VBox {
     private final ComboBox<String> groupSelector = new ComboBox<>();
     TableView<CountingStats> table = new TableView<>();
 
-    private final ListChangeListener<DebugEvent> eventListener = change -> refresh();
 
     public DebugCounter(DebugController controller) {
         this.controller = controller;
@@ -49,12 +48,13 @@ public class DebugCounter extends VBox {
         Label membersLabel = new Label("Messages:");
 
         TableColumn<CountingStats, String> messageIDColumn = new TableColumn<>("Message");
-        messageIDColumn.setCellValueFactory(new PropertyValueFactory<>("groupName"));
+        messageIDColumn.setCellValueFactory(new PropertyValueFactory<>("messageID"));
 
         TableColumn<CountingStats, Integer> countColumn = new TableColumn<>("Count");
         countColumn.setCellValueFactory(new PropertyValueFactory<>("messageCount"));
 
         table.getColumns().addAll(messageIDColumn, countColumn);
+        messageIDColumn.setPrefWidth(250);
 
         HBox tableBox = new HBox(8, table);
         getChildren().addAll(title, controls, membersLabel, tableBox);
@@ -63,32 +63,23 @@ public class DebugCounter extends VBox {
 
     private void setupActions() {
         groupSelector.setOnAction(event -> refreshContent());
-        controller.getEvents().addListener(eventListener);
     }
 
     private void refresh() {
-        String selectedGroup = groupSelector.getValue();
         List<String> groups = new ArrayList<>(controller.getGroupNames());
         groups.sort(String::compareToIgnoreCase);
         groupSelector.setItems(FXCollections.observableArrayList(groups));
-
-        if (selectedGroup != null && groups.contains(selectedGroup)) {
-            groupSelector.setValue(selectedGroup);
-        } else if (!groups.isEmpty()) {
-            groupSelector.setValue(groups.getFirst());
-        }
-
-        refreshContent();
     }
 
     private void refreshContent() {
         String group = groupSelector.getValue();
         HashMap<String, Integer> map = controller.getMessageCountMap(group);
+        ArrayList<CountingStats> stats = new ArrayList<>();
         for (String message : map.keySet()) {
             int count = map.get(message);
-            table.setItems(FXCollections.observableArrayList(new CountingStats(message, count)));
+            stats.add(new CountingStats(message, count));
         }
-
+        table.setItems(FXCollections.observableArrayList(stats));
     }
 
     public static class CountingStats {
