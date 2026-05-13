@@ -318,7 +318,14 @@ public class Manager {
         return messageToPathMap.get(messageId);
     }
     public ArrayList<String> getMessages(String groupName){
-        return groupToMessageMap.get(groupName);
+        ArrayList<String> messages = groupToMessageMap.get(groupName);
+        ArrayList<String> trimmedMessages = new ArrayList<>();
+        for (String message : messages){
+            if(messageToPathMap.containsKey(message) && !trimmedMessages.contains(message)){
+                trimmedMessages.add(message);
+            }
+        }
+        return trimmedMessages;
     }
     public HashMap<String, Integer> getMessageCountMap(String group){
         HashMap<String, Integer> actualMap = communicationService.getMessageCountMap();
