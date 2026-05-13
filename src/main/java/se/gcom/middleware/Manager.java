@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Manager {
 
@@ -26,6 +27,7 @@ public class Manager {
     private final DebugMonitor debugMonitor = new DebugMonitor();
     private HashMap<String, ArrayList<ArrayList<String>>> messageToPathMap = new HashMap<>();
     private HashMap<String, ArrayList<String>> groupToMessageMap = new HashMap<>();
+    private final Map<String, Boolean> groupReliableMap = new ConcurrentHashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -81,22 +83,31 @@ public class Manager {
             // print all messages for debug
             System.out.println("Sending to" + addresses);
             // let communication module send the message
-            communicationService.multicast(m, addresses);
+            Ack ack = communicationService.multicast(m, addresses);
+            recordOperationPerformance(groupName, messageId, ack);
             if (!groupToMessageMap.containsKey(groupName)) {
                 groupToMessageMap.put(groupName, new ArrayList<>());
             }
             groupToMessageMap.get(groupName).add(messageId);
+
         }
     }
 
-    public void handleIncomingMessage(ChatMessage msg, boolean reliable) {
+    public Ack handleIncomingMessage(ChatMessage msg, boolean reliable){
         orderingModule.handleIncomingMessage(msg);
         if (reliable) {
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
+            // incoming so we do not need to send to sender and ourselves
             addresses.remove(msg.getSenderId());
-            communicationService.multicast(m, addresses);
+            addresses.remove(myAddress);
+            return communicationService.multicast(m, addresses);
         }
+
+        // not reliable return normal ack
+        return Ack.newBuilder()
+                .setSuccess(true)
+                .build();
     }
 
     public void sendAck(Message msg, String ipAddress) {
@@ -145,8 +156,8 @@ public class Manager {
     public void addStaticGroup(String groupName, ArrayList<String> groupMembers) {
         groupManagement.createNewStaticGroup(groupName, groupMembers);
     }
-
-    public void addGroupToReliablePairing(String groupName, boolean reliable) {
+    public void addGroupToReliablePairing(String groupName, boolean reliable){
+        groupReliableMap.put(groupName, reliable);
         communicationService.addGroupToReliablePairing(groupName, reliable);
     }
 
@@ -177,8 +188,7 @@ public class Manager {
             MembershipAck membershipAck = ack.getMembership();
             System.out.println("Got membership ack with VC: " + membershipAck.getVectorClockMap());
             System.out.println("Can join group? " + membershipAck.getCanJoinStaticGroup());
-            if (!membershipAck.getIsStatic() || membershipAck.getCanJoinStaticGroup()) {
-                ;
+            if(!membershipAck.getIsStatic() || membershipAck.getCanJoinStaticGroup()) {;
                 OrderingModule.OrderingType groupType;
                 if (membershipAck.getIsCausal()) {
                     groupType = OrderingModule.OrderingType.CAUSAL;
@@ -204,6 +214,7 @@ public class Manager {
                     }
                 }
                 communicationService.addGroupToReliablePairing(name, membershipAck.getIsReliable());
+                groupReliableMap.put(name, membershipAck.getIsReliable());
             } else {
                 groupManagement.leaveGroup(name);
                 throw new StatusRuntimeException(Status.PERMISSION_DENIED.withDescription("You are not allowed to join this group"));
@@ -257,6 +268,20 @@ public class Manager {
 
     public Boolean orderingIsCausal(String groupName) {
         return orderingModule.orderingIsCausal(groupName);
+    }
+
+    private void recordOperationPerformance(String groupName, String messageId, Ack ack) {
+        boolean reliable = groupReliableMap.getOrDefault(groupName, false);
+        OrderingModule.OrderingType orderingType = orderingModule.getOrderingType(groupName);
+        int dataMessages = ack.getDataMessages();
+        int ackMessages = ack.getAckMessages();
+        int totalMessages = dataMessages + ackMessages;
+
+        debugMonitor.recordEvent(
+                DebugEventType.OPERATION_PERFORMANCE,
+                myAddress,
+                "messageId=" + messageId + " group=" + groupName + " ordering=" + orderingType + " multicast=" + (reliable ? "RELIABLE" : "UNRELIABLE") + " data=" + dataMessages + " acks=" + ackMessages + " total=" + totalMessages
+        );
     }
 
     public void setGroupOrdering(String groupId, OrderingModule.OrderingType type) {

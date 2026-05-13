@@ -39,13 +39,13 @@ public class DebugView extends BorderPane {
         VBox.setVgrow(sidebar, Priority.ALWAYS);
 
         setLeft(leftPane);
-        setCenter(new DebugOverview());
+        setCenter(new DebugOverview(controller));
     }
 
     private void setupActions() {
         sidebar.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if ("Overview".equals(newValue)) {
-                setCenter(new DebugOverview());
+                setCenter(new DebugOverview(controller));
             } else if ("Console".equals(newValue)) {
                 setCenter(new DebugConsole(controller));
             } else if ("Ordering".equals(newValue)) {

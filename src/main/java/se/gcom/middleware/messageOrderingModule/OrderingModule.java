@@ -231,6 +231,10 @@ public class OrderingModule {
         }
     }
 
+    public OrderingType getOrderingType(String groupName) {
+        return groupOrdering.getOrDefault(groupName, OrderingType.UNORDERED);
+    }
+
     private void recordVectorClock(String groupName, String action, Map<String, Integer> clock) {
         manager.getDebugMonitor().recordEvent(
                 DebugEventType.VECTOR_CLOCK_UPDATED,
