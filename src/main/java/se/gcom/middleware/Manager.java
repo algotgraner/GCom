@@ -98,7 +98,9 @@ public class Manager {
         if (reliable) {
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
+            // incoming so we do not need to send to sender and ourselves
             addresses.remove(msg.getSenderId());
+            addresses.remove(myAddress);
             return communicationService.multicast(m, addresses);
         }
 
