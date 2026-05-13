@@ -10,5 +10,6 @@ public enum DebugEventType {
 
     NETWORK_SEND,
     NETWORK_RECEIVE,
-    NETWORK_ACK
+    NETWORK_ACK,
+    NETWORK_FAILURE
 }
