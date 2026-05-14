@@ -33,6 +33,13 @@ public class DebugController {
         return manager.getGroupMembers(groupName);
     }
 
+    public List<String> getDebugKnownGroupMembers(String groupName) {
+        if (manager == null || groupName == null || groupName.isBlank()) {
+            return Collections.emptyList();
+        }
+        return manager.getDebugKnownGroupMembers(groupName);
+    }
+
     public void removeMember(String groupName, String address) {
         manager.removeMember(groupName, address);
     }
