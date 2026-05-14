@@ -39,11 +39,11 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                     // incomingMessage uses the OrderingModule
                     seenMessages.add(chatMessage.getMessageId());
                     chatAck = manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
-                    DataAck dataAck = DataAck.newBuilder().addAllPath(chatMessage.getPathList()).setMessageId(chatMessage.getMessageId()).build(); //Put these lines in an else if shortest path should be chosen (or outside the if)
-                    manager.sendAck(Message.newBuilder().setDatAck(dataAck).build(), chatMessage.getSenderId());
                 }else{
                     messageCount.put(chatMessage.getMessageId(), messageCount.get(chatMessage.getMessageId())+1);
                 }
+                DataAck dataAck = DataAck.newBuilder().addAllPath(chatMessage.getPathList()).setMessageId(chatMessage.getMessageId()).build(); //Put these lines in an else if shortest path should be chosen (or outside the if)
+                manager.sendAck(Message.newBuilder().setDatAck(dataAck).build(), chatMessage.getSenderId());
 
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
