@@ -12,9 +12,12 @@ import se.gcom.middleware.groupManagementModule.GroupManagement;
 import se.gcom.middleware.messageOrderingModule.OrderingModule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Manager {
@@ -28,6 +31,7 @@ public class Manager {
     private HashMap<String, ArrayList<ArrayList<String>>> messageToPathMap = new HashMap<>();
     private HashMap<String, ArrayList<String>> groupToMessageMap = new HashMap<>();
     private final Map<String, Boolean> groupReliableMap = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> debugKnownMembersByGroup = new ConcurrentHashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -132,10 +136,12 @@ public class Manager {
         if (msg.getJoining()) {
             if (!groupManagement.isStaticGroup(msg.getGroupId()) || groupManagement.canJoinStaticGroup(msg.getGroupId(), msg.getSenderId())) {
                 groupManagement.addNewMember(msg.getGroupId(), msg.getSenderId());
+                rememberDebugMember(msg.getGroupId(), msg.getSenderId());
                 orderingModule.addMemberToVectorClock(msg.getGroupId(), msg.getSenderId());
                 System.out.println("Received join message");
             }
         } else {
+            rememberDebugMember(msg.getGroupId(), msg.getSenderId());
             groupManagement.removeMember(msg.getGroupId(), msg.getSenderId());
             orderingModule.leaveGroup(msg.getGroupId(), msg.getSenderId());
             System.out.println("Received leave message");
@@ -152,11 +158,13 @@ public class Manager {
 
     public void addGroup(String groupName) {
         groupManagement.createNewGroup(groupName, new ArrayList<>());
+        rememberDebugMembers(groupName, groupManagement.getAddresses(groupName));
         groupToMessageMap.put(groupName, new ArrayList<>());
     }
 
     public void addStaticGroup(String groupName, ArrayList<String> groupMembers) {
         groupManagement.createNewStaticGroup(groupName, groupMembers);
+        rememberDebugMembers(groupName, groupManagement.getAddresses(groupName));
         groupToMessageMap.put(groupName, new ArrayList<>());
     }
     public void addGroupToReliablePairing(String groupName, boolean reliable){
@@ -219,6 +227,7 @@ public class Manager {
                 communicationService.addGroupToReliablePairing(name, membershipAck.getIsReliable());
                 groupToMessageMap.put(name, new ArrayList<>());
                 groupReliableMap.put(name, membershipAck.getIsReliable());
+                rememberDebugMembers(name, groupManagement.getAddresses(name));
             } else {
                 groupManagement.leaveGroup(name);
                 throw new StatusRuntimeException(Status.PERMISSION_DENIED.withDescription("You are not allowed to join this group"));
@@ -240,6 +249,16 @@ public class Manager {
 
     public List<String> getGroupMembers(String group) {
         return groupManagement.getAddresses(group);
+    }
+
+    public List<String> getDebugKnownGroupMembers(String group) {
+        if (group == null) {
+            return Collections.emptyList();
+        }
+
+        Set<String> knownMembers = new HashSet<>(debugKnownMembersByGroup.getOrDefault(group, Collections.emptySet()));
+        knownMembers.addAll(groupManagement.getAddresses(group));
+        return new ArrayList<>(knownMembers);
     }
 
     public void leaveGroup(String groupName) {
@@ -322,11 +341,13 @@ public class Manager {
     }
 
     public void removeMember(String groupName, String address) {
+        rememberDebugMember(groupName, address);
         groupManagement.removeMember(groupName, address);
     }
 
     public void addMember(String groupName, String address) {
         groupManagement.addNewMember(groupName, address);
+        rememberDebugMember(groupName, address);
     }
 
     public void receivePath(ArrayList<String> path, String messageId) {
@@ -359,6 +380,7 @@ public class Manager {
             return;
         }
         // clean up local state
+        rememberDebugMember(groupName, failedAddress);
         groupManagement.removeMember(groupName, failedAddress);
         orderingModule.leaveGroup(groupName, failedAddress);
         // craft leave msg
@@ -400,5 +422,21 @@ public class Manager {
             }
         }
         return trimmedMap;
+    }
+
+    private void rememberDebugMember(String groupName, String address) {
+        if (groupName == null || address == null || address.isBlank()) {
+            return;
+        }
+        debugKnownMembersByGroup.computeIfAbsent(groupName, ignored -> ConcurrentHashMap.newKeySet()).add(address);
+    }
+
+    private void rememberDebugMembers(String groupName, List<String> addresses) {
+        if (addresses == null) {
+            return;
+        }
+        for (String address : addresses) {
+            rememberDebugMember(groupName, address);
+        }
     }
 }

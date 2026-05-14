@@ -17,17 +17,14 @@ import se.gcom.app.controller.DebugController;
 import se.gcom.app.debug.DebugEvent;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class DebugConnections extends VBox {
     private final DebugController controller;
     private final ComboBox<String> groupSelector = new ComboBox<>();
     private final TableView<ConnectionRow> connectedClientsTable = new TableView<>();
-    private final Map<String, Set<String>> knownClientsByGroup = new HashMap<>();
 
     private final ListChangeListener<DebugEvent> eventListener = change -> refresh();
 
@@ -115,8 +112,7 @@ public class DebugConnections extends VBox {
         }
 
         List<String> activeMembers = new ArrayList<>(controller.getGroupMembers(group));
-        Set<String> knownMembers = knownClientsByGroup.computeIfAbsent(group, ignored -> new HashSet<>());
-        knownMembers.addAll(activeMembers);
+        List<String> knownMembers = new ArrayList<>(controller.getDebugKnownGroupMembers(group));
 
         Set<String> activeMemberSet = new HashSet<>(activeMembers);
         List<ConnectionRow> rows = knownMembers.stream()
