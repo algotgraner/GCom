@@ -18,9 +18,6 @@ public class DebugConsole extends VBox {
         setPadding(new Insets(16));
         setSpacing(12);
 
-        Button mockEventsButton = new Button("Add mock events");
-        mockEventsButton.setOnAction(event -> controller.addMockEvents());
-
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
                 .withZone(ZoneId.systemDefault());
 
@@ -63,6 +60,6 @@ public class DebugConsole extends VBox {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         VBox.setVgrow(table, Priority.ALWAYS);
-        getChildren().addAll(mockEventsButton, table);
+        getChildren().addAll(table);
     }
 }
