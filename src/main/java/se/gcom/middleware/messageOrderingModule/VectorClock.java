@@ -28,27 +28,23 @@ public class VectorClock {
     }
 
     public boolean canDeliver(Map<String, Integer> incomingClock, String senderID){
-        // this function will have to compare the clocks,
-        // this function should only be called for casual ordering
-        // if the message can not be delivered it should be added in a queue in OrderingModule
         int ourClockCount = clock.getOrDefault(senderID, 0);
         int incomingClockCount = incomingClock.getOrDefault(senderID, 0);
 
         if (senderID.equals(myAddress)) {
             // already incremented our clock when we sent it, incoming must be the same
             if (incomingClockCount != ourClockCount) {
-                System.out.println("CAN NOT DELIVER FIRST (own message)");
+                System.out.println("CAN NOT DELIVER (own message)");
                 return false;
             }
         } else {
             // we can not deliver if it is not the clock that we expect
             if (incomingClockCount != ourClockCount + 1) {
-                System.out.println("CAN NOT DELIVER FIRST (other)");
+                System.out.println("CAN NOT DELIVER (other)");
                 return false;
             }
         }
-
-        // chiterate over all other processes clocks to see if they have seen something we have not
+        // iterate over all other processes clocks to see if they have seen something we have not
         for (Map.Entry<String, Integer> entry : incomingClock.entrySet()) {
             String process = entry.getKey();
             int incomingVal = entry.getValue();
