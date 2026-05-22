@@ -54,6 +54,10 @@ public class Manager {
         );
     }
 
+    public void stop(){
+        communicationService.stop();
+    }
+
     public String getMyAddress() {
         return myAddress;
     }

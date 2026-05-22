@@ -36,6 +36,7 @@ public class App extends Application {
         System.out.println("shutting down...");
         if(manager != null){
             manager.leaveAllGroups();
+            manager.stop();
         }
         super.stop();
     }
