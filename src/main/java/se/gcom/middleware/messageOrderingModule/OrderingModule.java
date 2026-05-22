@@ -52,10 +52,10 @@ public class OrderingModule {
             }
             vectorClockMap.put(groupName, vc);
             holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
-            System.out.println("[Ordering] Joined CAUSAL group: " + groupName +" VC: " + vc);
+            System.out.println("Joined CAUSAL group: " + groupName +" VC: " + vc);
             recordVectorClock(groupName, "joined", vc.attachClock());
         } else {
-            System.out.println("[Ordering] Joined UNORDERED group: " + groupName );
+            System.out.println("Joined UNORDERED group: " + groupName );
         }
     }
 
@@ -89,7 +89,6 @@ public class OrderingModule {
         if (type == OrderingType.UNORDERED) {
             return msg;
         } else {
-            // here we need to get and increment the vector clock
             VectorClock vc = vectorClockMap.get(groupName);
             vc.increment(myAddress);
             Map<String, Integer> updatedClock = vc.attachClock();
@@ -153,14 +152,13 @@ public class OrderingModule {
 
         do {
             deliveredSomething = false;
-            // Use iterator to safely remove while iterating
             var iterator = queue.iterator();
 
             while (iterator.hasNext()) {
                 ChatMessage m = iterator.next();
 
                 if (myVC.canDeliver(m.getVectorClockMap(), m.getSenderId())) {
-                    iterator.remove();   // remove this message
+                    iterator.remove();
 
                     System.out.println("[Holdback] DELIVERING: " + m.getMessageId()
                             + " from " + m.getSenderId());
@@ -170,7 +168,7 @@ public class OrderingModule {
                     recordVectorClock(groupId, "released " + m.getMessageId(), myVC.attachClock());
 
                     deliveredSomething = true;
-                    // start over so we keep the order
+                    // start over so we keep the order correct
                     break;
                 }
             }
@@ -184,8 +182,7 @@ public class OrderingModule {
         VectorClock vc = vectorClockMap.get(groupName);
         if (vc != null) {
             vc.updateFromMap(Map.of(newMemberAddress, 0));
-            System.out.println("[Ordering] Added new member " + newMemberAddress +
-                    " to vector clock → " + vc);
+            System.out.println("Added new member " + newMemberAddress + " to vector clock -> " + vc);
             recordVectorClock(groupName, "member " + newMemberAddress + " added", vc.attachClock());
         }
     }
@@ -224,11 +221,7 @@ public class OrderingModule {
 
     public Boolean orderingIsCausal(String groupName){
         OrderingType type = groupOrdering.get(groupName);
-        if (type == OrderingType.CAUSAL) {
-            return true;
-        } else {
-            return false;
-        }
+        return type == OrderingType.CAUSAL;
     }
 
     public OrderingType getOrderingType(String groupName) {
@@ -242,8 +235,4 @@ public class OrderingModule {
                 "group=" + groupName + " action=" + action + " vc=" + clock
         );
     }
-
-
-
-
 }

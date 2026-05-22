@@ -54,6 +54,11 @@ public class Manager {
         );
     }
 
+    public void stop(){
+        communicationService.stop();
+        groupManagement.shutdown();
+    }
+
     public String getMyAddress() {
         return myAddress;
     }
