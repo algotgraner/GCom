@@ -2,6 +2,7 @@ package se.gcom.app.view.debug;
 
 import com.brunomnsilva.smartgraph.graph.Digraph;
 import com.brunomnsilva.smartgraph.graph.DigraphEdgeList;
+import com.brunomnsilva.smartgraph.graph.Vertex;
 import com.brunomnsilva.smartgraph.graphview.SmartCircularSortedPlacementStrategy;
 import com.brunomnsilva.smartgraph.graphview.SmartGraphPanel;
 import com.brunomnsilva.smartgraph.graphview.SmartGraphProperties;
@@ -23,8 +24,6 @@ import se.gcom.app.controller.DebugController;
 import se.gcom.app.debug.DebugEvent;
 
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -186,7 +185,12 @@ public class DebugPaths extends VBox {
                 """;
         SmartGraphProperties properties = new SmartGraphProperties(propertiesText);
         SmartPlacementStrategy strategy = new SmartCircularSortedPlacementStrategy();
-        SmartGraphPanel<String, String> graphView = new SmartGraphPanel<>(graph, properties, strategy, smartGraphCssUri());
+        SmartGraphPanel<String, String> graphView = new SmartGraphPanel<>(
+                graph,
+                properties,
+                strategy,
+                URI.create(DebugPaths.class.getResource("/smartgraph.css").toExternalForm())
+        );
         graphView.setMinHeight(420);
         graphView.setPrefHeight(520);
         graphView.setMaxWidth(Double.MAX_VALUE);
@@ -285,7 +289,7 @@ public class DebugPaths extends VBox {
         });
     }
 
-    private com.brunomnsilva.smartgraph.graph.Vertex<String> findVertex(Digraph<String, String> graph, String node) {
+    private Vertex<String> findVertex(Digraph<String, String> graph, String node) {
         return graph.vertices().stream()
                 .filter(vertex -> vertex.element().equals(node))
                 .findFirst()
@@ -305,15 +309,4 @@ public class DebugPaths extends VBox {
         return new HBox(5, marker, label);
     }
 
-    private URI smartGraphCssUri() {
-        URL resource = DebugPaths.class.getResource("/smartgraph.css");
-        if (resource == null) {
-            throw new IllegalStateException("Missing smartgraph.css resource");
-        }
-        try {
-            return resource.toURI();
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException("Invalid smartgraph.css resource URI", e);
-        }
-    }
 }
