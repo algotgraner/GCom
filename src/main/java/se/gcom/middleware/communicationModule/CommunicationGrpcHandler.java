@@ -5,17 +5,18 @@ import se.gcom.app.debug.DebugEventType;
 import se.gcom.middleware.Manager;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CommunicationGrpcHandler extends CommunicationServiceGrpc.CommunicationServiceImplBase {
 
     private final Manager manager;
     private final Set<String> seenMessages;
-    private final HashMap<String, Boolean> groupToReliable;
-    private final HashMap<String, Integer> messageCount =  new HashMap<>();
+    private final Map<String, Boolean> groupToReliable;
+    private final Map<String, Integer> messageCount =  new ConcurrentHashMap<>();
     public CommunicationGrpcHandler(Manager manager) {
         this.manager = manager;
-        seenMessages = new HashSet<>();
-        groupToReliable = new HashMap<>();
+        seenMessages = ConcurrentHashMap.newKeySet();
+        groupToReliable = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -33,13 +34,12 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
                     chatMessageBuilder.addPath(manager.getMyAddress());
                 }
                 ChatMessage chatMessage = chatMessageBuilder.build();
-                if(!seenMessages.contains(chatMessage.getMessageId())){
+                if(seenMessages.add(chatMessage.getMessageId())){
                     messageCount.put(chatMessage.getMessageId(), 1);
                     // incomingMessage uses the OrderingModule
-                    seenMessages.add(chatMessage.getMessageId());
                     manager.handleIncomingMessage(chatMessage, groupToReliable.get(chatMessage.getGroupId()));
                 }else{
-                    messageCount.put(chatMessage.getMessageId(), messageCount.get(chatMessage.getMessageId())+1);
+                    messageCount.merge(chatMessage.getMessageId(), 1, Integer::sum);
                 }
                 System.out.println("Received: " + chatMessage.getPayload());
                 System.out.println(chatMessage.getSenderId());
@@ -106,6 +106,6 @@ public class CommunicationGrpcHandler extends CommunicationServiceGrpc.Communica
         groupToReliable.put(group, reliable);
     }
     public HashMap<String, Integer> getMessageCountMap(){
-        return messageCount;
+        return new HashMap<>(messageCount);
     }
 }
