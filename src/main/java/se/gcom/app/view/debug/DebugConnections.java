@@ -10,6 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -74,8 +75,46 @@ public class DebugConnections extends VBox {
             }
         });
 
+        TableColumn<ConnectionRow, Void> delayColumn = new TableColumn<>("Delay (s)");
+        delayColumn.setCellFactory(column -> new TableCell<>() {
+            private final TextField delayField = new TextField();
+
+            {
+                delayField.setPrefColumnCount(5);
+                delayField.setOnAction(event -> saveDelay());
+                delayField.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
+                    if (!isFocused) {
+                        saveDelay();
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                    return;
+                }
+
+                delayField.setText(formatSeconds(getTableView().getItems().get(getIndex()).delaySeconds()));
+                setGraphic(delayField);
+            }
+
+            private void saveDelay() {
+                if (getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    return;
+                }
+
+                ConnectionRow connection = getTableView().getItems().get(getIndex());
+                setConnectionDelay(connection, parseDelaySeconds(delayField.getText()));
+                delayField.setText(formatSeconds(connection.delaySeconds()));
+            }
+        });
+
         connectedClientsTable.getColumns().add(nameColumn);
         connectedClientsTable.getColumns().add(actionColumn);
+        connectedClientsTable.getColumns().add(delayColumn);
         connectedClientsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         connectedClientsTable.setPlaceholder(new Label("No connected clients"));
         VBox.setVgrow(connectedClientsTable, Priority.ALWAYS);
@@ -117,7 +156,11 @@ public class DebugConnections extends VBox {
         Set<String> activeMemberSet = new HashSet<>(activeMembers);
         List<ConnectionRow> rows = knownMembers.stream()
                 .sorted(String::compareToIgnoreCase)
-                .map(address -> new ConnectionRow(address, activeMemberSet.contains(address)))
+                .map(address -> new ConnectionRow(
+                        address,
+                        activeMemberSet.contains(address),
+                        controller.getSendDelaySeconds(address)
+                ))
                 .toList();
         connectedClientsTable.setItems(FXCollections.observableArrayList(rows));
     }
@@ -134,13 +177,43 @@ public class DebugConnections extends VBox {
         connectedClientsTable.refresh();
     }
 
+    private void setConnectionDelay(ConnectionRow connection, double delaySeconds) {
+        if (connection == null) {
+            return;
+        }
+
+        controller.setSendDelaySeconds(connection.address(), delaySeconds);
+        connection.setDelaySeconds(delaySeconds);
+    }
+
+    private double parseDelaySeconds(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+
+        try {
+            return Math.max(0, Double.parseDouble(value.trim()));
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
+    }
+
+    private String formatSeconds(double value) {
+        if (value == Math.rint(value)) {
+            return Long.toString(Math.round(value));
+        }
+        return Double.toString(value);
+    }
+
     private static class ConnectionRow {
         private final String address;
         private boolean enabled;
+        private double delaySeconds;
 
-        private ConnectionRow(String address, boolean enabled) {
+        private ConnectionRow(String address, boolean enabled, double delaySeconds) {
             this.address = address;
             this.enabled = enabled;
+            this.delaySeconds = delaySeconds;
         }
 
         private String address() {
@@ -153,6 +226,14 @@ public class DebugConnections extends VBox {
 
         private void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        private double delaySeconds() {
+            return delaySeconds;
+        }
+
+        private void setDelaySeconds(double delaySeconds) {
+            this.delaySeconds = delaySeconds;
         }
     }
 }

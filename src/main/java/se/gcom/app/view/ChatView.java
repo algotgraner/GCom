@@ -208,7 +208,7 @@ public class ChatView {
         RadioButton causalRadio = new RadioButton("Causal Ordering");
         unorderedRadio.setToggleGroup(orderingGroup);
         causalRadio.setToggleGroup(orderingGroup);
-        causalRadio.setSelected(true);                    // default to Causal (more interesting)
+        causalRadio.setSelected(true);
 
         HBox orderingBox = new HBox(15, unorderedRadio, causalRadio);
         orderingBox.setPadding(new Insets(5, 0, 5, 0));

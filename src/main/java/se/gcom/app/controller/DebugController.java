@@ -18,10 +18,6 @@ public class DebugController {
         return manager.getDebugMonitor().getEvents();
     }
 
-    public void addMockEvents() {
-        manager.getDebugMonitor().addMockEvents();
-    }
-
     public List<String> getGroupNames() {
         if (manager == null) {
             return Collections.emptyList();
@@ -40,10 +36,6 @@ public class DebugController {
         return manager.getDebugKnownGroupMembers(groupName);
     }
 
-    public void removeMember(String groupName, String address) {
-        manager.removeMember(groupName, address);
-    }
-
     public void setMemberEnabled(String groupName, String address, boolean enabled) {
         if (manager == null || groupName == null || address == null) {
             return;
@@ -54,6 +46,21 @@ public class DebugController {
         } else {
             manager.removeMember(groupName, address);
         }
+    }
+
+    public double getSendDelaySeconds(String address) {
+        if (manager == null || address == null) {
+            return 0;
+        }
+        return manager.getDebugSendDelay(address) / 1000.0;
+    }
+
+    public void setSendDelaySeconds(String address, double delaySeconds) {
+        if (manager == null || address == null) {
+            return;
+        }
+        long delayMillis = Math.max(0, Math.round(delaySeconds * 1000));
+        manager.setDebugSendDelay(address, delayMillis);
     }
 
     public Map<String, Integer> getCurrentVectorClock(String groupName) {
@@ -67,13 +74,6 @@ public class DebugController {
         if (manager != null && groupName != null && process != null) {
             manager.setVectorClockValue(groupName, process, value);
         }
-    }
-
-    public List<String> getMembers(String groupName) {
-        if (manager == null || groupName == null || groupName.isBlank()) {
-            return Collections.emptyList();
-        }
-        return manager.getMembers(groupName);
     }
 
     public List<ChatMessage> getHoldbackQueue(String groupName) {
@@ -91,12 +91,5 @@ public class DebugController {
 
     public HashMap<String, Integer> getMessageCountMap(String groupName) {
         return manager.getMessageCountMap(groupName);
-    }
-
-    public String getMyAddress() {
-        if (manager == null) {
-            return "";
-        }
-        return manager.getMyAddress();
     }
 }
