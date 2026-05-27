@@ -30,9 +30,6 @@ public class CommunicationGrpcSender {
             latestAck = sendToNode(address, msg);
             dataMessages++;
             ackMessages++;
-            if (latestAck.hasData()){
-                ///
-            }
 
             if (latestAck != null) {
                 dataMessages += latestAck.getDataMessages();
@@ -76,7 +73,7 @@ public class CommunicationGrpcSender {
             return ack;
 
         } catch (StatusRuntimeException e){
-            System.err.println("GRPC runtime exception, Removing the address, (SHOULD CALL MANAGER HERE AND REPORT FAILURE):" + e.getMessage());
+            System.err.println("GRPC runtime exception, Removing the address, Reporting to manager" + e.getMessage());
             manager.handleNodeFailure(msg.getChatMessage().getGroupId(), address);
             removeChannel(address);
             return Ack.newBuilder()
@@ -112,26 +109,6 @@ public class CommunicationGrpcSender {
 
     }
 
-    public Ack sendJoinRequest(Message msg, String address) {
-        ManagedChannel channel = getChannel(address);
-        try {
-            CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
-                    CommunicationServiceGrpc.newBlockingStub(channel)
-                            .withDeadlineAfter(10, TimeUnit.SECONDS);
-
-            recordNetworkEvent(DebugEventType.NETWORK_SEND, address, msg);
-            Ack ack = stub.sendMessage(msg);
-            recordAck(address, ack);
-            return ack;
-
-        } catch (Exception e) {
-            System.err.println("Failed to get response from " + address + ": " + e.getMessage());
-            removeChannel(address);
-            return Ack.newBuilder().setSuccess(false).build();
-        }
-    }
-
-    // This function should be called on shutdown
     public void shutdown(){
         System.out.println("Shutting down all channels...");
         channelMap.forEach((addr, ch) -> ch.shutdownNow());

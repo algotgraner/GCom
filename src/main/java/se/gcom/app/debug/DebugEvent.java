@@ -8,17 +8,4 @@ public record DebugEvent(
         DebugEventType type,
         String source,
         String details
-) {
-    public String toDisplayString() {
-        return "#%d [%s] source=%s %s".formatted(
-                sequenceNumber,
-                type,
-                valueOrDash(source),
-                valueOrDash(details)
-        );
-    }
-
-    private static String valueOrDash(String value) {
-        return value == null || value.isBlank() ? "-" : value;
-    }
-}
+) { }

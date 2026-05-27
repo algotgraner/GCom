@@ -54,6 +54,11 @@ public class Manager {
         );
     }
 
+    public void stop(){
+        communicationService.stop();
+        groupManagement.shutdown();
+    }
+
     public String getMyAddress() {
         return myAddress;
     }
@@ -303,7 +308,9 @@ public class Manager {
         debugMonitor.recordEvent(
                 DebugEventType.OPERATION_PERFORMANCE,
                 myAddress,
-                "messageId=" + messageId + " group=" + groupName + " ordering=" + orderingType + " multicast=" + (reliable ? "RELIABLE" : "UNRELIABLE") + " data=" + dataMessages + " acks=" + ackMessages + " total=" + totalMessages
+                "messageId=" + messageId + " group=" + groupName + " ordering=" + orderingType +
+                        " multicast=" + (reliable ? "RELIABLE" : "UNRELIABLE") + " data=" + dataMessages +
+                        " acks=" + ackMessages + " total=" + totalMessages
         );
     }
 

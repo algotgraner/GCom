@@ -39,9 +39,6 @@ public class ChatController {
         return groups;
     }
 
-    public ChatGroup getSelectedGroup() {
-        return selectedGroup;
-    }
 
     public void selectGroup(ChatGroup group) {
         selectedGroup = group;
@@ -62,7 +59,7 @@ public class ChatController {
             }
             manager.addGroupToReliablePairing(trimmedName, reliable);
         }
-        ChatGroup group = new ChatGroup(createGroupId(trimmedName), trimmedName);
+        ChatGroup group = new ChatGroup(trimmedName, trimmedName);
         groups.add(group);
         selectedGroup = group;
 
@@ -112,30 +109,6 @@ public class ChatController {
         );
     }
 
-
-    private String createGroupId(String name) {
-        String baseId = name.replaceAll("\\s+", "");
-        if (baseId.isEmpty()) {
-            baseId = "Group";
-        }
-
-        String candidate = baseId;
-        int suffix = 1;
-        while (groupIdExists(candidate)) {
-            candidate = baseId + suffix;
-            suffix++;
-        }
-        return candidate;
-    }
-
-    private boolean groupIdExists(String id) {
-        for (ChatGroup group : groups) {
-            if (group.getId().equals(id)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public ChatGroup joinGroup(String name, String ip) {
         if (name == null || name.isBlank()) {
@@ -197,4 +170,3 @@ public class ChatController {
         return manager.namingServerIsUp();
     }
 }
-

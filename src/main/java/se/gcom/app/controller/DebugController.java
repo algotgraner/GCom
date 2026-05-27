@@ -18,10 +18,6 @@ public class DebugController {
         return manager.getDebugMonitor().getEvents();
     }
 
-    public void addMockEvents() {
-        manager.getDebugMonitor().addMockEvents();
-    }
-
     public List<String> getGroupNames() {
         if (manager == null) {
             return Collections.emptyList();
@@ -38,10 +34,6 @@ public class DebugController {
             return Collections.emptyList();
         }
         return manager.getDebugKnownGroupMembers(groupName);
-    }
-
-    public void removeMember(String groupName, String address) {
-        manager.removeMember(groupName, address);
     }
 
     public void setMemberEnabled(String groupName, String address, boolean enabled) {
@@ -84,13 +76,6 @@ public class DebugController {
         }
     }
 
-    public List<String> getMembers(String groupName) {
-        if (manager == null || groupName == null || groupName.isBlank()) {
-            return Collections.emptyList();
-        }
-        return manager.getMembers(groupName);
-    }
-
     public List<ChatMessage> getHoldbackQueue(String groupName) {
         if (manager == null || groupName == null || groupName.isBlank()) {
             return Collections.emptyList();
@@ -106,12 +91,5 @@ public class DebugController {
 
     public HashMap<String, Integer> getMessageCountMap(String groupName) {
         return manager.getMessageCountMap(groupName);
-    }
-
-    public String getMyAddress() {
-        if (manager == null) {
-            return "";
-        }
-        return manager.getMyAddress();
     }
 }
