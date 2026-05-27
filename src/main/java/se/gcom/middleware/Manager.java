@@ -93,6 +93,9 @@ public class Manager {
             System.out.println("Sending to" + addresses);
             // let communication module send the message
             communicationService.multicast(m, addresses);
+            int outgoingCount = communicationService.getSentMessages();
+
+            recordOperationPerformance(groupName, messageId, outgoingCount);
             if (!groupToMessageMap.containsKey(groupName)) {
                 groupToMessageMap.put(groupName, new ArrayList<>());
             }
@@ -105,15 +108,17 @@ public class Manager {
         orderingModule.handleIncomingMessage(msg);
         groupToMessageMap.get(msg.getGroupId()).add(msg.getMessageId());
         if (reliable) {
+            if (msg.getSenderId().equals(myAddress)) {
+                return;
+            }
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
             // incoming so we do not need to send to sender and ourselves
             addresses.remove(msg.getSenderId());
             addresses.remove(myAddress);
+            if (addresses.isEmpty()) return;
             communicationService.multicast(m, addresses);
         }
-        int outgoingCount = communicationService.getSentMessages();
-        recordOperationPerformance(msg.getGroupId(), msg.getMessageId(), outgoingCount);
     }
 
     public void deliverIncomingMessage(ChatMessage msg) {
@@ -413,8 +418,6 @@ public class Manager {
                 + " in group '" + groupName + "' to: " + addresses);
 
         communicationService.multicast(m, addresses);
-        int outgoingCount = communicationService.getSentMessages();
-        recordOperationPerformance(groupName, m.getChatMessage().getMessageId(), outgoingCount);
     }
 
     public ArrayList<ArrayList<String>> getPaths(String messageId) {

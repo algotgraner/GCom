@@ -67,7 +67,7 @@ public class CommunicationGrpcSender {
     }
 
     public Ack sendBlocking(String address, Message msg) {
-        sentMessages++;
+        //sentMessages++;
         ManagedChannel channel = getChannel(address);
         CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
                 CommunicationServiceGrpc.newBlockingStub(channel)
