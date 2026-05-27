@@ -92,8 +92,8 @@ public class Manager {
             // print all messages for debug
             System.out.println("Sending to" + addresses);
             // let communication module send the message
-            Ack ack = communicationService.multicast(m, addresses);
-            recordOperationPerformance(groupName, messageId, ack);
+            communicationService.multicast(m, addresses);
+            //recordOperationPerformance(groupName, messageId, ack);
             if (!groupToMessageMap.containsKey(groupName)) {
                 groupToMessageMap.put(groupName, new ArrayList<>());
             }
@@ -102,7 +102,7 @@ public class Manager {
         }
     }
 
-    public Ack handleIncomingMessage(ChatMessage msg, boolean reliable){
+    public void handleIncomingMessage(ChatMessage msg, boolean reliable){
         orderingModule.handleIncomingMessage(msg);
         groupToMessageMap.get(msg.getGroupId()).add(msg.getMessageId());
         if (reliable) {
@@ -111,13 +111,8 @@ public class Manager {
             // incoming so we do not need to send to sender and ourselves
             addresses.remove(msg.getSenderId());
             addresses.remove(myAddress);
-            return communicationService.multicast(m, addresses);
+            communicationService.multicast(m, addresses);
         }
-
-        // not reliable return normal ack
-        return Ack.newBuilder()
-                .setSuccess(true)
-                .build();
     }
 
     public void sendAck(Message msg, String ipAddress) {
@@ -198,7 +193,7 @@ public class Manager {
         Message m = Message.newBuilder().setGroupMembership(g).build();
         // Send join request
         System.out.println("Sending join request to first in member list: " + addresses.getFirst());
-        Ack ack = communicationService.multicast(m, addresses);
+        Ack ack = communicationService.sendBlocking(addresses.getFirst(), m);
 
         if (ack.getSuccess() && ack.hasMembership()) {
             MembershipAck membershipAck = ack.getMembership();

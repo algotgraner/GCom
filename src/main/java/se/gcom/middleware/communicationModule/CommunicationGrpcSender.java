@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import se.gcom.app.debug.DebugEventType;
 import se.gcom.middleware.Manager;
 
@@ -19,74 +20,68 @@ public class CommunicationGrpcSender {
         this.manager = manager;
     }
 
-    public Ack multicast(Message msg, List<String> addresses){
-        Ack latestAck = null;
-        int dataMessages = 0;
-        int ackMessages = 0;
-        boolean success = true;
-        String errorMessage = "";
-
+    public void multicast(Message msg, List<String> addresses) {
         for (String address : addresses) {
-            latestAck = sendToNode(address, msg);
-            dataMessages++;
-            ackMessages++;
-
-            if (latestAck != null) {
-                dataMessages += latestAck.getDataMessages();
-                ackMessages += latestAck.getAckMessages();
-                success = success && latestAck.getSuccess();
-                if (!latestAck.getErrorMessage().isBlank()) {
-                    errorMessage = latestAck.getErrorMessage();
-                }
-            } else {
-                success = false;
-            }
+            sendOneWay(address, msg);
         }
-
-        Ack.Builder aggregateAck = latestAck == null
-                ? Ack.newBuilder()
-                : latestAck.toBuilder();
-
-        aggregateAck
-                .setSuccess(success)
-                .setDataMessages(dataMessages)
-                .setAckMessages(ackMessages);
-
-        if (!errorMessage.isBlank()) {
-            aggregateAck.setErrorMessage(errorMessage);
-        }
-
-        return aggregateAck.build();
     }
 
-    private Ack sendToNode(String address, Message msg){
+    private void sendOneWay(String address, Message msg) {
         ManagedChannel channel = getChannel(address);
-        try {
-            CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
-                    CommunicationServiceGrpc.newBlockingStub(channel).withDeadlineAfter(5, TimeUnit.SECONDS);
+        CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
+                CommunicationServiceGrpc.newBlockingStub(channel)
+                        .withDeadlineAfter(5, TimeUnit.SECONDS);
 
-            // send the message to the node
+        try {
             recordNetworkEvent(DebugEventType.NETWORK_SEND, address, msg);
             Ack ack = stub.sendMessage(msg);
             recordAck(address, ack);
-            System.out.println("ACK status: " + ack);
-            return ack;
 
-        } catch (StatusRuntimeException e){
-            System.err.println("GRPC runtime exception, Removing the address, Reporting to manager" + e.getMessage());
-            manager.handleNodeFailure(msg.getChatMessage().getGroupId(), address);
+        } catch (StatusRuntimeException e) {
+            System.err.println("gRPC error to " + address + ": " + e.getMessage());
+
+            if (msg.hasChatMessage()) {
+                String groupId = msg.getChatMessage().getGroupId();
+                // Only trigger failure if node is still known in the group
+                if (manager.getMembers(groupId).contains(address)) {
+                    manager.handleNodeFailure(groupId, address);
+                }
+            }
+            removeChannel(address);
+
+        } catch (Exception e) {
+            System.err.println("Unexpected error sending to " + address + ": " + e.getMessage());
+            removeChannel(address);
+        }
+    }
+
+    public Ack sendBlocking(String address, Message msg) {
+        ManagedChannel channel = getChannel(address);
+        CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
+                CommunicationServiceGrpc.newBlockingStub(channel)
+                        .withDeadlineAfter(5, TimeUnit.SECONDS);
+
+        try {
+            recordNetworkEvent(DebugEventType.NETWORK_SEND, address, msg);
+            Ack ack = stub.sendMessage(msg);
+            recordAck(address, ack);
+            return ack;
+        } catch (StatusRuntimeException e) {
+            System.err.println("Blocking gRPC error to " + address + ": " + e.getMessage());
+            if (msg.hasChatMessage()) {
+                manager.handleNodeFailure(msg.getChatMessage().getGroupId(), address);
+            }
             removeChannel(address);
             return Ack.newBuilder()
                     .setSuccess(false)
-                    .setErrorMessage("gRPC error: " + e.getStatus().getCode() + " - " + e.getMessage())
+                    .setErrorMessage(e.getMessage())
                     .build();
-
         } catch (Exception e) {
             System.err.println("Could not reach node: " + e.getMessage());
             removeChannel(address);
             return Ack.newBuilder()
                     .setSuccess(false)
-                    .setErrorMessage("gRPC error: " + e.getMessage() + " - " + e.getMessage())
+                    .setErrorMessage(e.getMessage())
                     .build();
         }
     }
