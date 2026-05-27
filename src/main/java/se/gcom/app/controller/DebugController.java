@@ -48,6 +48,21 @@ public class DebugController {
         }
     }
 
+    public double getSendDelaySeconds(String address) {
+        if (manager == null || address == null) {
+            return 0;
+        }
+        return manager.getDebugSendDelay(address) / 1000.0;
+    }
+
+    public void setSendDelaySeconds(String address, double delaySeconds) {
+        if (manager == null || address == null) {
+            return;
+        }
+        long delayMillis = Math.max(0, Math.round(delaySeconds * 1000));
+        manager.setDebugSendDelay(address, delayMillis);
+    }
+
     public Map<String, Integer> getCurrentVectorClock(String groupName) {
         if (manager == null || groupName == null || groupName.isBlank()) {
             return Collections.emptyMap();

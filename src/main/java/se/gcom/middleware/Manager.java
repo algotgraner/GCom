@@ -6,7 +6,6 @@ import se.gcom.app.controller.ChatController;
 import se.gcom.app.controller.DebugController;
 import se.gcom.app.debug.DebugEventType;
 import se.gcom.app.debug.DebugMonitor;
-import se.gcom.app.model.ChatGroup;
 import se.gcom.middleware.communicationModule.*;
 import se.gcom.middleware.groupManagementModule.GroupManagement;
 import se.gcom.middleware.messageOrderingModule.OrderingModule;
@@ -32,6 +31,7 @@ public class Manager {
     private HashMap<String, ArrayList<String>> groupToMessageMap = new HashMap<>();
     private final Map<String, Boolean> groupReliableMap = new ConcurrentHashMap<>();
     private final Map<String, Set<String>> debugKnownMembersByGroup = new ConcurrentHashMap<>();
+    private final Map<String, Long> debugSendDelayByAddress = new ConcurrentHashMap<>();
 
     GroupManagement groupManagement;
     CommunicationService communicationService;
@@ -355,6 +355,25 @@ public class Manager {
     public void addMember(String groupName, String address) {
         groupManagement.addNewMember(groupName, address);
         rememberDebugMember(groupName, address);
+    }
+
+    public long getDebugSendDelay(String address) {
+        if (address == null) {
+            return 0;
+        }
+        return debugSendDelayByAddress.getOrDefault(address, 0L);
+    }
+
+    public void setDebugSendDelay(String address, long delayMillis) {
+        if (address == null || address.isBlank()) {
+            return;
+        }
+
+        if (delayMillis <= 0) {
+            debugSendDelayByAddress.remove(address);
+        } else {
+            debugSendDelayByAddress.put(address, delayMillis);
+        }
     }
 
     public void receivePath(ArrayList<String> path, String messageId) {
