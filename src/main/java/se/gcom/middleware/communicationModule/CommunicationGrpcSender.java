@@ -2,6 +2,8 @@ package se.gcom.middleware.communicationModule;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.grpc.ManagedChannel;
@@ -15,15 +17,22 @@ public class CommunicationGrpcSender {
     private final ConcurrentHashMap<String, ManagedChannel> channelMap = new ConcurrentHashMap<>();
 
     private int sentMessages;
+    private final ScheduledExecutorService sendExecutor;
     private final Manager manager;
     public CommunicationGrpcSender(Manager manager) {
         this.manager = manager;
         this.sentMessages = 0;
+        this.sendExecutor = Executors.newScheduledThreadPool(8);
     }
 
     public void multicast(Message msg, List<String> addresses) {
         for (String address : addresses) {
-            sendOneWay(address, msg);
+            long delayMillis = manager.getDebugSendDelay(address);
+            sendExecutor.schedule(
+                    () -> sendOneWay(address, msg),
+                    delayMillis,
+                    TimeUnit.MILLISECONDS
+            );
         }
     }
 
@@ -109,6 +118,7 @@ public class CommunicationGrpcSender {
 
     public void shutdown(){
         System.out.println("Shutting down all channels...");
+        sendExecutor.shutdownNow();
         channelMap.forEach((addr, ch) -> ch.shutdownNow());
         channelMap.clear();
     }
