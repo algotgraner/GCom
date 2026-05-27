@@ -122,6 +122,7 @@ public class Manager {
     public void deliverIncomingMessage(ChatMessage msg) {
         boolean outgoing = msg.getSenderId().equals(groupManagement.getAddress());
         chatController.receiveMessage(msg.getSenderId(), msg.getGroupId(), msg.getPayload(), outgoing);
+        receivePath(new ArrayList<>(msg.getPathList()), msg.getMessageId());
         debugMonitor.recordEvent(
                 DebugEventType.MESSAGE_DELIVERED,
                 myAddress,
