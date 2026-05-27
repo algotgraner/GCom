@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import io.grpc.stub.StreamObserver;
 import se.gcom.app.debug.DebugEventType;
 import se.gcom.middleware.Manager;
 
@@ -15,9 +14,11 @@ public class CommunicationGrpcSender {
     //this class will be used to make grpc calls to send messages to other nodes
     private final ConcurrentHashMap<String, ManagedChannel> channelMap = new ConcurrentHashMap<>();
 
+    private int sentMessages;
     private final Manager manager;
     public CommunicationGrpcSender(Manager manager) {
         this.manager = manager;
+        this.sentMessages = 0;
     }
 
     public void multicast(Message msg, List<String> addresses) {
@@ -33,6 +34,7 @@ public class CommunicationGrpcSender {
                         .withDeadlineAfter(5, TimeUnit.SECONDS);
 
         try {
+            sentMessages++;
             recordNetworkEvent(DebugEventType.NETWORK_SEND, address, msg);
             Ack ack = stub.sendMessage(msg);
             recordAck(address, ack);
@@ -56,6 +58,7 @@ public class CommunicationGrpcSender {
     }
 
     public Ack sendBlocking(String address, Message msg) {
+        sentMessages++;
         ManagedChannel channel = getChannel(address);
         CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
                 CommunicationServiceGrpc.newBlockingStub(channel)
@@ -124,6 +127,13 @@ public class CommunicationGrpcSender {
                 manager.getMyAddress(),
                 "from=" + address + " success=" + ack.getSuccess()
         );
+    }
+
+    public int getSentMessages(){
+        return sentMessages;
+    }
+    public void resetSentMessages(){
+        sentMessages = 0;
     }
 
 }

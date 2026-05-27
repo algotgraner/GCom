@@ -93,12 +93,12 @@ public class Manager {
             System.out.println("Sending to" + addresses);
             // let communication module send the message
             communicationService.multicast(m, addresses);
-            //recordOperationPerformance(groupName, messageId, ack);
             if (!groupToMessageMap.containsKey(groupName)) {
                 groupToMessageMap.put(groupName, new ArrayList<>());
             }
             groupToMessageMap.get(groupName).add(messageId);
-
+            //int outgoingCount = communicationService.getSentMessages();
+            //recordOperationPerformance(groupName, m.getChatMessage().getMessageId(), outgoingCount);
         }
     }
 
@@ -113,10 +113,8 @@ public class Manager {
             addresses.remove(myAddress);
             communicationService.multicast(m, addresses);
         }
-    }
-
-    public void sendAck(Message msg, String ipAddress) {
-        communicationService.multicast(msg, new ArrayList<>(List.of(ipAddress)));
+        int outgoingCount = communicationService.getSentMessages();
+        recordOperationPerformance(msg.getGroupId(), msg.getMessageId(), outgoingCount);
     }
 
     public void deliverIncomingMessage(ChatMessage msg) {
@@ -294,17 +292,15 @@ public class Manager {
         return orderingModule.orderingIsCausal(groupName);
     }
 
-    private void recordOperationPerformance(String groupName, String messageId, Ack ack) {
+    private void recordOperationPerformance(String groupName, String messageId, int msgCount) {
         boolean reliable = groupReliableMap.getOrDefault(groupName, false);
         OrderingModule.OrderingType orderingType = orderingModule.getOrderingType(groupName);
-        int dataMessages = ack.getDataMessages();
-        int ackMessages = ack.getAckMessages();
-        int totalMessages = dataMessages + ackMessages;
+        int totalMessages = msgCount;
 
         debugMonitor.recordEvent(
                 DebugEventType.OPERATION_PERFORMANCE,
                 myAddress,
-                "messageId=" + messageId + " group=" + groupName + " ordering=" + orderingType + " multicast=" + (reliable ? "RELIABLE" : "UNRELIABLE") + " data=" + dataMessages + " acks=" + ackMessages + " total=" + totalMessages
+                "messageId=" + messageId + " group=" + groupName + " ordering=" + orderingType + " multicast=" + (reliable ? "RELIABLE" : "UNRELIABLE") + " total=" + totalMessages
         );
     }
 
@@ -399,6 +395,8 @@ public class Manager {
                 + " in group '" + groupName + "' to: " + addresses);
 
         communicationService.multicast(m, addresses);
+        int outgoingCount = communicationService.getSentMessages();
+        recordOperationPerformance(groupName, m.getChatMessage().getMessageId(), outgoingCount);
     }
 
     public ArrayList<ArrayList<String>> getPaths(String messageId) {

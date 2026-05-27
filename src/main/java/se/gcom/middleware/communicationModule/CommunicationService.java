@@ -57,4 +57,11 @@ public class CommunicationService {
         return handler.getMessageCountMap();
     }
 
+    public int getSentMessages(){
+        int count = sender.getSentMessages();
+        sender.resetSentMessages();
+        return count;
+
+    }
+
 }

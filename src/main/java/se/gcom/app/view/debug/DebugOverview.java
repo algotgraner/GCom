@@ -51,12 +51,6 @@ public class DebugOverview extends VBox {
         TableColumn<PerformanceRow, String> multicastColumn = new TableColumn<>("Multicast");
         multicastColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().multicast()));
 
-        TableColumn<PerformanceRow, Integer> dataColumn = new TableColumn<>("Data");
-        dataColumn.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().dataMessages()).asObject());
-
-        TableColumn<PerformanceRow, Integer> ackColumn = new TableColumn<>("Acks");
-        ackColumn.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().ackMessages()).asObject());
-
         TableColumn<PerformanceRow, Integer> totalColumn = new TableColumn<>("Total");
         totalColumn.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().totalMessages()).asObject());
 
@@ -65,8 +59,6 @@ public class DebugOverview extends VBox {
                 groupColumn,
                 orderingColumn,
                 multicastColumn,
-                dataColumn,
-                ackColumn,
                 totalColumn
         );
         performanceTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
@@ -103,8 +95,6 @@ public class DebugOverview extends VBox {
                 values.getOrDefault("group", ""),
                 values.getOrDefault("ordering", ""),
                 values.getOrDefault("multicast", ""),
-                parseInt(values.get("data")),
-                parseInt(values.get("acks")),
                 parseInt(values.get("total"))
         );
     }
@@ -126,8 +116,6 @@ public class DebugOverview extends VBox {
             String group,
             String ordering,
             String multicast,
-            int dataMessages,
-            int ackMessages,
             int totalMessages
     ) {
     }
