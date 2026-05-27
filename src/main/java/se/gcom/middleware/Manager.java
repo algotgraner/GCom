@@ -108,15 +108,15 @@ public class Manager {
         orderingModule.handleIncomingMessage(msg);
         groupToMessageMap.get(msg.getGroupId()).add(msg.getMessageId());
         if (reliable) {
+            if (msg.getSenderId().equals(myAddress)) {
+                return;
+            }
             Message m = Message.newBuilder().setChatMessage(msg).build();
             List<String> addresses = groupManagement.getAddresses(msg.getGroupId());
             // incoming so we do not need to send to sender and ourselves
-
-            System.out.println("BEFORE================================" + addresses);
             addresses.remove(msg.getSenderId());
             addresses.remove(myAddress);
             if (addresses.isEmpty()) return;
-            System.out.println("AFTER================================" + addresses);
             communicationService.multicast(m, addresses);
         }
     }
