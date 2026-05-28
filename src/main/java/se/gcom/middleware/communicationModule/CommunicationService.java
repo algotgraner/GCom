@@ -50,7 +50,7 @@ public class CommunicationService {
 
     // Used for when acks are needed, like when joining a group
     public Ack sendBlocking(String address, Message msg) {
-        return sender.sendBlocking(address, msg);
+        return sender.sendJoin(address, msg);
     }
 
     public HashMap<String, Integer> getMessageCountMap(){

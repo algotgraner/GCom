@@ -29,23 +29,24 @@ public class CommunicationGrpcSender {
         for (String address : addresses) {
             long delayMillis = manager.getDebugSendDelay(address);
             sendExecutor.schedule(
-                    () -> sendOneWay(address, msg),
+                    () -> sendToNode(address, msg),
                     delayMillis,
                     TimeUnit.MILLISECONDS
             );
         }
     }
 
-    private void sendOneWay(String address, Message msg) {
+    private void sendToNode(String address, Message msg) {
         ManagedChannel channel = getChannel(address);
         CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
                 CommunicationServiceGrpc.newBlockingStub(channel)
                         .withDeadlineAfter(5, TimeUnit.SECONDS);
 
         try {
-            sentMessages++;
             recordNetworkEvent(DebugEventType.NETWORK_SEND, address, msg);
             Ack ack = stub.sendMessage(msg);
+            // increment for msg and the ack
+            sentMessages += 2;
             recordAck(address, ack);
 
         } catch (StatusRuntimeException e) {
@@ -66,8 +67,7 @@ public class CommunicationGrpcSender {
         }
     }
 
-    public Ack sendBlocking(String address, Message msg) {
-        //sentMessages++;
+    public Ack sendJoin(String address, Message msg) {
         ManagedChannel channel = getChannel(address);
         CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
                 CommunicationServiceGrpc.newBlockingStub(channel)

@@ -94,7 +94,6 @@ public class Manager {
             // let communication module send the message
             communicationService.multicast(m, addresses);
             int outgoingCount = communicationService.getSentMessages();
-
             recordOperationPerformance(groupName, messageId, outgoingCount);
             if (!groupToMessageMap.containsKey(groupName)) {
                 groupToMessageMap.put(groupName, new ArrayList<>());
@@ -118,6 +117,8 @@ public class Manager {
             addresses.remove(myAddress);
             if (addresses.isEmpty()) return;
             communicationService.multicast(m, addresses);
+            int outgoingCount = communicationService.getSentMessages();
+            recordOperationPerformance(msg.getGroupId(), msg.getMessageId(), outgoingCount);
         }
     }
 
