@@ -211,7 +211,12 @@ public class Manager {
                 orderingModule.setUpGroup(name, groupType);
                 // join the group with the vector clock we
                 orderingModule.joinGroup(name, membershipAck.getVectorClockMap());
-                if (!namingServerIsUp()) {
+                if (namingServerIsUp()) {
+                    ArrayList<String> newAddresses = new ArrayList<>(addresses);
+                    newAddresses.remove(addresses.getFirst());
+                    newAddresses.remove(myAddress);
+                    communicationService.multicast(m, newAddresses);
+                } else {
                     ArrayList<String> newAddresses = new ArrayList<>(membershipAck.getMembersList());
                     groupManagement.joinGroup(name, newAddresses);
                     newAddresses.remove(ip);
