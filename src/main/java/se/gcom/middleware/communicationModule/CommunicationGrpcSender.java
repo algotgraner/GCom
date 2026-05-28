@@ -16,34 +16,33 @@ public class CommunicationGrpcSender {
     //this class will be used to make grpc calls to send messages to other nodes
     private final ConcurrentHashMap<String, ManagedChannel> channelMap = new ConcurrentHashMap<>();
 
-    private int sentMessages;
     private final ScheduledExecutorService sendExecutor;
     private final Manager manager;
     public CommunicationGrpcSender(Manager manager) {
         this.manager = manager;
-        this.sentMessages = 0;
         this.sendExecutor = Executors.newScheduledThreadPool(8);
     }
 
-    public void multicast(Message msg, List<String> addresses) {
+    public int multicast(Message msg, List<String> addresses) {
         for (String address : addresses) {
             long delayMillis = manager.getDebugSendDelay(address);
             sendExecutor.schedule(
-                    () -> sendOneWay(address, msg),
+                    () -> sendToNode(address, msg),
                     delayMillis,
                     TimeUnit.MILLISECONDS
             );
         }
+
+        return addresses.size() * 2;
     }
 
-    private void sendOneWay(String address, Message msg) {
+    private void sendToNode(String address, Message msg) {
         ManagedChannel channel = getChannel(address);
         CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
                 CommunicationServiceGrpc.newBlockingStub(channel)
                         .withDeadlineAfter(5, TimeUnit.SECONDS);
 
         try {
-            sentMessages++;
             recordNetworkEvent(DebugEventType.NETWORK_SEND, address, msg);
             Ack ack = stub.sendMessage(msg);
             recordAck(address, ack);
@@ -66,8 +65,7 @@ public class CommunicationGrpcSender {
         }
     }
 
-    public Ack sendBlocking(String address, Message msg) {
-        //sentMessages++;
+    public Ack sendJoin(String address, Message msg) {
         ManagedChannel channel = getChannel(address);
         CommunicationServiceGrpc.CommunicationServiceBlockingStub stub =
                 CommunicationServiceGrpc.newBlockingStub(channel)
@@ -137,13 +135,6 @@ public class CommunicationGrpcSender {
                 manager.getMyAddress(),
                 "from=" + address + " success=" + ack.getSuccess()
         );
-    }
-
-    public int getSentMessages(){
-        return sentMessages;
-    }
-    public void resetSentMessages(){
-        sentMessages = 0;
     }
 
 }

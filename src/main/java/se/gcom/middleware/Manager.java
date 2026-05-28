@@ -92,9 +92,7 @@ public class Manager {
             // print all messages for debug
             System.out.println("Sending to" + addresses);
             // let communication module send the message
-            communicationService.multicast(m, addresses);
-            int outgoingCount = communicationService.getSentMessages();
-
+            int outgoingCount = communicationService.multicast(m, addresses);
             recordOperationPerformance(groupName, messageId, outgoingCount);
             if (!groupToMessageMap.containsKey(groupName)) {
                 groupToMessageMap.put(groupName, new ArrayList<>());
@@ -117,7 +115,8 @@ public class Manager {
             addresses.remove(msg.getSenderId());
             addresses.remove(myAddress);
             if (addresses.isEmpty()) return;
-            communicationService.multicast(m, addresses);
+            int outgoingCount = communicationService.multicast(m, addresses);
+            recordOperationPerformance(msg.getGroupId(), msg.getMessageId(), outgoingCount);
         }
     }
 
@@ -212,7 +211,12 @@ public class Manager {
                 orderingModule.setUpGroup(name, groupType);
                 // join the group with the vector clock we
                 orderingModule.joinGroup(name, membershipAck.getVectorClockMap());
-                if (!namingServerIsUp()) {
+                if (namingServerIsUp()) {
+                    ArrayList<String> newAddresses = new ArrayList<>(addresses);
+                    newAddresses.remove(addresses.getFirst());
+                    newAddresses.remove(myAddress);
+                    communicationService.multicast(m, newAddresses);
+                } else {
                     ArrayList<String> newAddresses = new ArrayList<>(membershipAck.getMembersList());
                     groupManagement.joinGroup(name, newAddresses);
                     newAddresses.remove(ip);

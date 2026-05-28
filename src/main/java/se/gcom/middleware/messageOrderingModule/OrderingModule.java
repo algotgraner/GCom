@@ -35,7 +35,7 @@ public class OrderingModule {
         if (type == OrderingType.CAUSAL) {
             // create vector clock
             VectorClock vc = new VectorClock(myAddress);
-            vc.increment(myAddress);
+            //vc.increment(myAddress);
             vectorClockMap.put(groupName, vc);
             holdbackQueue.putIfAbsent(groupName, new ConcurrentLinkedQueue<>());
             recordVectorClock(groupName, "created", vc.attachClock());

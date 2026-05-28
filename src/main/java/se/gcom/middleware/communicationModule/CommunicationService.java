@@ -44,24 +44,17 @@ public class CommunicationService {
         handler.addGroupToReliablePairing(group, reliable);
     }
 
-    public void multicast(Message msg, List<String> addresses) {
-        sender.multicast(msg, addresses);
+    public int multicast(Message msg, List<String> addresses) {
+        return sender.multicast(msg, addresses);
     }
 
     // Used for when acks are needed, like when joining a group
     public Ack sendBlocking(String address, Message msg) {
-        return sender.sendBlocking(address, msg);
+        return sender.sendJoin(address, msg);
     }
 
     public HashMap<String, Integer> getMessageCountMap(){
         return handler.getMessageCountMap();
-    }
-
-    public int getSentMessages(){
-        int count = sender.getSentMessages();
-        sender.resetSentMessages();
-        return count;
-
     }
 
 }
