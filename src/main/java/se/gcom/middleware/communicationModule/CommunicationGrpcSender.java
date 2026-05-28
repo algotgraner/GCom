@@ -16,16 +16,14 @@ public class CommunicationGrpcSender {
     //this class will be used to make grpc calls to send messages to other nodes
     private final ConcurrentHashMap<String, ManagedChannel> channelMap = new ConcurrentHashMap<>();
 
-    private int sentMessages;
     private final ScheduledExecutorService sendExecutor;
     private final Manager manager;
     public CommunicationGrpcSender(Manager manager) {
         this.manager = manager;
-        this.sentMessages = 0;
         this.sendExecutor = Executors.newScheduledThreadPool(8);
     }
 
-    public void multicast(Message msg, List<String> addresses) {
+    public int multicast(Message msg, List<String> addresses) {
         for (String address : addresses) {
             long delayMillis = manager.getDebugSendDelay(address);
             sendExecutor.schedule(
@@ -34,6 +32,8 @@ public class CommunicationGrpcSender {
                     TimeUnit.MILLISECONDS
             );
         }
+
+        return addresses.size() * 2;
     }
 
     private void sendToNode(String address, Message msg) {
@@ -45,8 +45,6 @@ public class CommunicationGrpcSender {
         try {
             recordNetworkEvent(DebugEventType.NETWORK_SEND, address, msg);
             Ack ack = stub.sendMessage(msg);
-            // increment for msg and the ack
-            sentMessages += 2;
             recordAck(address, ack);
 
         } catch (StatusRuntimeException e) {
@@ -137,13 +135,6 @@ public class CommunicationGrpcSender {
                 manager.getMyAddress(),
                 "from=" + address + " success=" + ack.getSuccess()
         );
-    }
-
-    public int getSentMessages(){
-        return sentMessages;
-    }
-    public void resetSentMessages(){
-        sentMessages = 0;
     }
 
 }
